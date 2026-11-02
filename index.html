@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="theme-color" content="#2F6FCF">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Nestling">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nestling Baby Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* layout idea: soft sky-and-blush nursery by day, navy-and-rose low-glare by night; sticky header + top tabs; big thumb buttons */
+  --sky-50:#EEF6FF; --sky-100:#DCEBFF; --sky-200:#BCD7FA; --sky-500:#2F6FCF; --sky-700:#1B4A94;
+  --pink-50:#FFF1F6; --pink-100:#FFDCE8; --pink-200:#FFBCD2; --pink-500:#D93A73; --pink-700:#9E2152;
+  --ink:#21304D; --muted:#5F6E8C; --line:#E3EAF6; --card:#FFFFFF; --surface:#FFFFFF; --page:#F6F9FF; --topbg:rgba(246,249,255,.92);
+  --ok:#23805A; --ok-bg:#E3F6EC; --warn:#9A6200; --warn-bg:#FFF0D2; --bad:#B53030; --bad-bg:#FFE3E3; --info-bg:#E4EEFF;
+  --display:'Baloo 2','Trebuchet MS',system-ui,sans-serif; --body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --r:20px; --shadow:0 6px 20px rgba(47,111,207,.10); --deco:.9;
+  color-scheme:light;
+}
+html[data-mode="night"]{
+  --sky-50:#14204A; --sky-100:#1B2A5C; --sky-200:#2E4180; --sky-500:#B5384F; --sky-700:#F6B9C4;
+  --pink-50:#2A1830; --pink-100:#3A1E3C; --pink-200:#6A2E4A; --pink-500:#D9556F; --pink-700:#FFB5C2;
+  --ink:#F3D5D9; --muted:#9AA6CC; --line:#25335F; --card:#111B3A; --surface:#16224A; --page:#0A1128; --topbg:rgba(10,17,40,.94);
+  --ok:#7FD6AE; --ok-bg:#12342A; --warn:#F2C26B; --warn-bg:#3B2E10; --bad:#FF9C9C; --bad-bg:#431C22; --info-bg:#1C2A5C;
+  --shadow:0 6px 20px rgba(0,0,0,.35); --deco:.12; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--page);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.15;text-wrap:balance}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid var(--sky-500);outline-offset:2px}
+input,select,textarea{font:inherit;color:var(--ink)}
+.sky{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:radial-gradient(1200px 500px at 90% -10%,var(--pink-100),transparent 60%),radial-gradient(900px 500px at -10% 0%,var(--sky-100),transparent 60%),var(--page)}
+.sky svg{position:absolute;opacity:var(--deco)}
+.cloud1{top:90px;left:-30px;width:150px;animation:drift 38s ease-in-out infinite alternate}
+.cloud2{top:300px;right:-40px;width:190px;animation:drift 46s ease-in-out infinite alternate-reverse}
+.star{width:18px;animation:twinkle 4s ease-in-out infinite}
+@keyframes drift{from{transform:translateX(0)}to{transform:translateX(40px)}}
+@keyframes twinkle{0%,100%{opacity:.35}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.sky svg{animation:none!important}}
+#app{position:relative;z-index:1;min-height:100%;padding-bottom:110px}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px}
+.top{position:sticky;top:0;z-index:20;background:var(--topbg);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0 6px}
+.who{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;text-align:left;min-width:0}
+.who b{font-family:var(--display);font-size:22px;display:block;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42vw}
+.who small{color:var(--muted);font-weight:600;font-size:13px}
+.avatar{display:grid;place-items:center;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,var(--sky-100),var(--pink-100));border:3px solid var(--surface);box-shadow:0 0 0 2px var(--pink-200);flex:none;line-height:1}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.iconbtn{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--sky-700);padding:0}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:0 0 6px}
+.tab{position:relative;border:0;background:transparent;border-radius:14px;padding:7px 2px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:700;color:var(--muted)}
+.tab svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-selected="true"]{background:var(--sky-500);color:#fff;box-shadow:0 4px 12px rgba(47,111,207,.35)}
+.tab[data-v="rem"][aria-selected="true"]{background:var(--pink-500);box-shadow:0 4px 12px rgba(217,58,115,.35)}
+.tab .dot{position:absolute;top:4px;right:calc(50% - 20px);width:9px;height:9px;border-radius:50%;background:var(--pink-500);border:2px solid var(--surface)}
+.subbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 0 8px;flex-wrap:wrap}
+.asme{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-weight:800;font-size:13px;color:var(--sky-700)}
+.view{padding:16px 0 0;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--shadow)}
+.card h2{font-size:21px;margin-bottom:4px}
+.card h3{font-size:17px}
+.sub{color:var(--muted);font-size:14px;margin:0}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.btn{border:0;border-radius:16px;padding:12px 18px;font-weight:800;background:var(--sky-500);color:#fff;min-height:48px}
+.btn.pink{background:var(--pink-500)}
+.btn.ghost{background:var(--surface);color:var(--sky-700);border:1.5px solid var(--sky-200)}
+.btn.soft{background:var(--sky-50);color:var(--sky-700)}
+.btn.small{min-height:38px;padding:7px 12px;font-size:14px;border-radius:12px}
+.btn.block{width:100%}
+.btn.danger{background:var(--bad);color:#fff}
+.link{background:none;border:0;color:var(--sky-700);font-weight:700;text-decoration:underline;padding:8px 4px}
+.chip{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:9px 14px;font-weight:700;min-height:42px}
+.chip[aria-pressed="true"]{background:var(--sky-500);border-color:var(--sky-500);color:#fff}
+.chip.pk[aria-pressed="true"]{background:var(--pink-500);border-color:var(--pink-500)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+label.f{display:block;font-weight:800;font-size:14px;margin-bottom:6px}
+.inp{width:100%;border:1.5px solid var(--sky-200);border-radius:14px;padding:11px 13px;background:var(--surface);min-height:48px}
+.field{display:flex;flex-direction:column;gap:2px}
+.pill{display:inline-block;border-radius:999px;padding:3px 10px;font-size:13px;font-weight:800}
+.pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)} .pill.info{background:var(--info-bg);color:var(--sky-700)}
+.pill.none{background:var(--sky-50);color:var(--muted)}
+.by{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:1px}
+.by.b0{background:var(--info-bg);color:var(--sky-700)} .by.b1{background:var(--pink-100);color:var(--pink-700)}
+.empty{text-align:center;color:var(--muted);padding:14px 8px;font-weight:600}
+.empty span{display:block;font-size:30px;margin-bottom:2px}
+.big{font-family:var(--display);font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+.stat{background:var(--sky-50);border-radius:16px;padding:12px}
+.stat.pk{background:var(--pink-50)}
+.stat small{display:block;color:var(--muted);font-weight:700;font-size:13px}
+.hero{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(120deg,var(--sky-100),var(--pink-100));border:0}
+.hero .big{font-size:30px}
+.hero p{margin:2px 0 0;font-weight:700}
+.logbtn{border:0;border-radius:24px;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-family:var(--display);font-size:22px;font-weight:600;color:#fff;box-shadow:0 8px 18px rgba(47,111,207,.22);transition:transform .12s}
+.logbtn:active{transform:scale(.97)}
+.logbtn.b{background:linear-gradient(160deg,#5A9BEA,var(--sky-500))}
+.logbtn.p{background:linear-gradient(160deg,#F27AA3,var(--pink-500));box-shadow:0 8px 18px rgba(217,58,115,.22)}
+.logbtn.m{background:linear-gradient(160deg,#9AB8E8,#6C8FD4)}
+html[data-mode="night"] .logbtn.b{background:linear-gradient(160deg,#4B5FA8,#2E3F86)}
+html[data-mode="night"] .logbtn.p{background:linear-gradient(160deg,#D9556F,#A13049)}
+html[data-mode="night"] .logbtn.m{background:linear-gradient(160deg,#5A4A98,#3A2F78)}
+.logbtn svg{width:36px;height:36px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.logbtn small{font-family:var(--body);font-weight:700;font-size:13px;opacity:.92}
+.sleepbtn{width:210px;height:210px;border-radius:50%;margin:6px auto;border:0;color:#fff;font-family:var(--display);font-size:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:radial-gradient(circle at 30% 25%,#7DB1F5,var(--sky-500) 70%);box-shadow:0 0 0 12px var(--sky-100),0 16px 30px rgba(47,111,207,.3)}
+.sleepbtn.on{background:radial-gradient(circle at 30% 25%,#F9A1BF,var(--pink-500) 70%);box-shadow:0 0 0 12px var(--pink-100),0 16px 30px rgba(217,58,115,.3)}
+.sleepbtn .big{font-size:38px;color:#fff}
+html[data-mode="night"] .btn{min-height:58px;font-size:18px}
+html[data-mode="night"] .btn.small{min-height:46px;font-size:16px}
+html[data-mode="night"] .chip{min-height:52px;font-size:17px;padding:10px 16px}
+html[data-mode="night"] .logbtn{min-height:150px;font-size:26px}
+html[data-mode="night"] .inp{min-height:56px;font-size:18px}
+html[data-mode="night"] .tab{font-size:13px;padding:10px 2px 8px}
+html[data-mode="night"] .sleepbtn{width:250px;height:250px}
+.hist{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column}
+.hist li{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px dashed var(--line)}
+.hist li:first-child{border-top:0}
+.hist time{font-weight:800;min-width:74px;font-variant-numeric:tabular-nums}
+.hist .d{flex:1}
+.hist .x{border:0;background:none;color:var(--muted);width:36px;height:36px;border-radius:50%;font-size:20px}
+.hist .day{display:block;font-size:12px;color:var(--muted);font-weight:700}
+.bars{display:flex;align-items:flex-end;gap:8px;height:130px;margin-top:10px}
+.bars div.c{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.bars i{display:block;width:100%;max-width:34px;border-radius:10px 10px 4px 4px;background:var(--sky-200)}
+.bars .today i{background:var(--sky-500)} .bars.pk i{background:var(--pink-200)} .bars.pk .today i{background:var(--pink-500)}
+.bars b{font-size:12px;font-variant-numeric:tabular-nums} .bars span{font-size:12px;color:var(--muted);font-weight:700}
+.tip{display:flex;gap:12px;align-items:flex-start}
+.tip .ic{font-size:26px;line-height:1}
+.tip p{margin:0}
+.ob{padding-top:calc(24px + env(safe-area-inset-top))}
+.ob .brand{display:flex;align-items:center;gap:8px;font-family:var(--display);font-size:24px;color:var(--sky-700)}
+.ob h1{font-size:34px;margin:14px 0 6px}
+.avpick{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.emojis{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:10px}
+.emojis button{border:1.5px solid var(--line);background:var(--surface);border-radius:12px;font-size:24px;aspect-ratio:1;min-height:40px;padding:0}
+.emojis button[aria-pressed="true"]{border-color:var(--pink-500);background:var(--pink-50);box-shadow:0 0 0 2px var(--pink-200)}
+.err{color:var(--bad);font-weight:700;font-size:14px;margin:6px 0 0}
+.sw{position:relative;width:52px;height:30px;flex:none}
+.sw input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.sw span{position:absolute;inset:0;border-radius:999px;background:#C9D3E6;transition:.2s}
+.sw span::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw input:checked+span{background:var(--pink-500)} .sw input:checked+span::after{transform:translateX(22px)}
+.sw input:focus-visible+span{outline:3px solid var(--sky-500);outline-offset:2px}
+.rem{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px dashed var(--line)}
+.rem:first-of-type{border-top:0}
+.rem .t{flex:1;min-width:0}
+.rem .t b{display:block}
+.xbtn{border:0;background:none;font-size:22px;color:var(--muted);width:36px;height:36px;border-radius:50%}
+#toasts{position:fixed;left:0;right:0;top:calc(150px + env(safe-area-inset-top));z-index:60;display:flex;flex-direction:column;gap:8px;align-items:center;padding:0 12px;pointer-events:none}
+.toast{pointer-events:auto;width:100%;max-width:520px;background:var(--surface);border:2px solid var(--pink-200);border-left:8px solid var(--pink-500);border-radius:18px;padding:12px 14px;box-shadow:0 14px 30px rgba(33,48,77,.25);animation:pop .25s ease-out}
+@keyframes pop{from{transform:translateY(-10px);opacity:0}to{transform:none;opacity:1}}
+.toast b{font-family:var(--display);font-size:18px}
+.toast p{margin:2px 0 8px;color:var(--muted);font-weight:600}
+#snack{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--page);border-radius:999px;padding:10px 18px;font-weight:700;z-index:80;max-width:90vw;text-align:center}
+.fab{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));z-index:30;width:62px;height:62px;border-radius:50%;border:0;background:linear-gradient(150deg,#F27AA3,var(--pink-500));color:#fff;display:grid;place-items:center;box-shadow:0 10px 22px rgba(217,58,115,.4)}
+.fab svg{width:28px;height:28px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.scrim{position:fixed;inset:0;background:rgba(10,17,40,.55);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);color:var(--ink);width:100%;max-width:560px;border-radius:26px 26px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:90%;overflow:auto;animation:up .25s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.sheet h2{font-size:24px;margin-bottom:4px}
+.sheet h3{margin:16px 0 6px}
+.micbig{width:96px;height:96px;border-radius:50%;border:0;background:linear-gradient(150deg,#F27AA3,var(--pink-500));display:grid;place-items:center;margin:8px auto;box-shadow:0 0 0 10px var(--pink-100)}
+.micbig svg{width:40px;height:40px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.note{background:var(--info-bg);border-radius:14px;padding:10px 12px;font-size:14px;font-weight:600;color:var(--sky-700)}
+.note.pk{background:var(--pink-50);color:var(--pink-700)}
+.hand{background:var(--pink-50);border:1.5px solid var(--pink-200);border-left:8px solid var(--pink-500)}
+.redflag{background:var(--bad-bg);border:2px solid var(--bad);color:var(--ink)}
+.redflag h2{color:var(--bad)}
+.calm{display:flex;gap:12px;align-items:flex-start;background:var(--sky-50);border-color:var(--sky-200)}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:28px;letter-spacing:.08em;font-weight:800;text-align:center;background:var(--sky-50);border-radius:14px;padding:12px;user-select:all}
+.moods{display:flex;gap:8px}
+.moods button{flex:1;font-size:28px;border:1.5px solid var(--line);background:var(--surface);border-radius:14px;min-height:54px}
+.moods button[aria-pressed="true"]{border-color:var(--pink-500);background:var(--pink-50);box-shadow:0 0 0 2px var(--pink-200)}
+details summary{cursor:pointer;font-weight:800;color:var(--sky-700);padding:6px 0}
+.foot{text-align:center;color:var(--muted);font-size:13px;font-weight:600;padding:18px 0 0}
+.visually{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.mini{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.mini th,.mini td{padding:6px 4px;text-align:left;border-bottom:1px solid var(--line)}
+.mini th{color:var(--muted);font-size:12px}
+/* doctor report (always paper-white) */
+.reportwrap{position:fixed;inset:0;z-index:70;background:#E9EEF8;overflow:auto;padding:12px}
+.rep{max-width:780px;margin:0 auto;background:#fff;color:#16213A;border-radius:14px;padding:22px;font-size:14px;line-height:1.4;font-family:var(--body)}
+.rep h1{font-size:26px;margin:0 0 2px;color:#16213A} .rep h3{font-size:16px;margin:16px 0 6px;color:#1B4A94;font-family:var(--display)}
+.rep table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums} .rep th,.rep td{border-bottom:1px solid #DDE5F3;padding:5px 4px;text-align:left} .rep th{font-size:12px;color:#5F6E8C}
+.rep td:not(:first-child),.rep th{white-space:nowrap} .rep{overflow-x:auto}
+.rep .tot td{font-weight:800;background:#F1F6FF}
+.rep textarea{width:100%;min-height:70px;border:1.5px solid #BCD7FA;border-radius:10px;padding:8px;color:#16213A;background:#fff}
+.reptools{max-width:780px;margin:0 auto 10px;display:flex;gap:8px;flex-wrap:wrap}
+@media print{body *{visibility:hidden}.rep,.rep *{visibility:visible}.reportwrap{position:static;background:#fff;padding:0}.rep{position:absolute;left:0;top:0;width:100%;border-radius:0}.noprint{display:none!important}}
+@media (min-width:640px){.logbtn{min-height:140px}}
+</style>
+</head>
+<body>
+<div class="sky" aria-hidden="true">
+  <svg class="cloud1" viewBox="0 0 160 70"><path d="M30 60a22 22 0 0 1 2-44 30 30 0 0 1 58-6 26 26 0 0 1 40 22 20 20 0 0 1-4 28z" fill="#fff" opacity=".85"/></svg>
+  <svg class="cloud2" viewBox="0 0 160 70"><path d="M30 60a22 22 0 0 1 2-44 30 30 0 0 1 58-6 26 26 0 0 1 40 22 20 20 0 0 1-4 28z" fill="#fff" opacity=".8"/></svg>
+  <svg class="star" style="top:150px;right:14%" viewBox="0 0 24 24"><path d="M12 2l2.6 6.4L21 9l-5 4.4L17.5 20 12 16.5 6.5 20 8 13.4 3 9l6.4-.6z" fill="#FFBCD2"/></svg>
+  <svg class="star" style="top:420px;left:6%;animation-delay:1.2s" viewBox="0 0 24 24"><path d="M12 2l2.6 6.4L21 9l-5 4.4L17.5 20 12 16.5 6.5 20 8 13.4 3 9l6.4-.6z" fill="#BCD7FA"/></svg>
+  <svg class="star" style="top:640px;right:8%;animation-delay:2.2s" viewBox="0 0 24 24"><path d="M12 2l2.6 6.4L21 9l-5 4.4L17.5 20 12 16.5 6.5 20 8 13.4 3 9l6.4-.6z" fill="#BCD7FA"/></svg>
+</div>
+<div id="app"><div class="wrap"><p class="empty"><span>🍼</span>Warming the bottle…</p></div></div>
+<div id="toasts" role="status" aria-live="polite"></div>
+<div id="snackhost" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ================= helpers ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2, 10);
+const now = () => Date.now();
+const MIN = 60000, HR = 3600000, DAY = 86400000;
+const sod = (t = now()) => { const d = new Date(t); d.setHours(0,0,0,0); return d.getTime(); };
+const fmtT = t => new Date(t).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+const fmtD = t => new Date(t).toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'});
+const dayLabel = t => { const d = sod(t), n = sod(); return d === n ? 'Today' : d === n - DAY ? 'Yesterday' : new Date(t).toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'}); };
+const pad = n => String(n).padStart(2, '0');
+function durText(ms) { ms = Math.max(0, ms); const m = Math.floor(ms / MIN); if (m < 1) return 'just now'; if (m < 60) return m + 'm'; const h = Math.floor(m / 60); return h + 'h ' + pad(m % 60) + 'm'; }
+const ago = ms => { const d = durText(ms); return d === 'just now' ? d : d + ' ago'; };
+function clockText(ms) { ms = Math.max(0, ms); const s = Math.floor(ms / 1000); return Math.floor(s / 3600) + ':' + pad(Math.floor(s / 60) % 60) + ':' + pad(s % 60); }
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+const clean = o => JSON.parse(JSON.stringify(o));
+const med = a => { const s = [...a].sort((x, y) => x - y), m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+function snack(msg) { const h = $('#snackhost'); if (!h) return; h.innerHTML = `<div id="snack">${esc(msg)}</div>`; clearTimeout(snack.t); snack.t = setTimeout(() => { h.innerHTML = ''; }, 3800); }
+
+/* ================= constants ================= */
+const EMOJIS = ['👶','🍼','🐣','🐥','🧸','🦄','🐻','🐰','🦊','🐼','🐳','🦋','🌙','⭐','🌈','🐸'];
+const FORMULAS = ['Similac','Enfamil','Gerber Good Start','Kirkland Signature','Aptamil','HiPP','Nestlé NAN','Other'];
+const COLORS = [['Yellow','#E8B923'],['Green','#5DA24A'],['Brown','#8A5A32'],['Black','#2B2B2B'],['Red','#D13A3A'],['Pale / white','#D9D9D9']];
+const ROLES = ['Mom','Dad','Grandma','Grandpa','Nanny'];
+const ICON = {
+  feed:'<svg viewBox="0 0 24 24"><path d="M10 3h4v2l1.2 2.2V19a2 2 0 0 1-2 2h-2.4a2 2 0 0 1-2-2V7.2L10 5z"/><path d="M8.8 11h2.4M8.8 14h2.4"/></svg>',
+  diaper:'<svg viewBox="0 0 24 24"><path d="M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11z"/></svg>',
+  sleep:'<svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
+  rem:'<svg viewBox="0 0 24 24"><path d="M6 17h12l-1.5-2v-4a4.5 4.5 0 0 0-9 0v4z"/><path d="M10 19.5a2 2 0 0 0 4 0"/></svg>',
+  ins:'<svg viewBox="0 0 24 24"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg>',
+  mic:'<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+  gear:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>'
+};
+const TABS = [['feed','Feed'],['diaper','Diaper'],['sleep','Sleep'],['rem','Alerts'],['ins','Insights']];
+/* typical by age: general guidance, not medical advice */
+const BANDS = [
+  {max:28,  name:'Newborn', feeds:[8,12], sleepH:[14,17], wake:[35,60], tips:['Newborns feed about 8 to 12 times a day. Cluster feeding in the evening is normal.','Sleep comes in short bursts of 2 to 4 hours. Day and night are still a mystery to them.','Tummy time can start with 1 to 2 minutes, a few times a day, while you watch.']},
+  {max:91,  name:'1 to 3 months', feeds:[7,9], sleepH:[14,17], wake:[60,90], tips:['Around 6 to 8 weeks many babies give their first real smiles.','Longer stretches at night may begin. Some babies manage 4 to 6 hours.','Growth spurts often show up around 3 weeks, 6 weeks and 3 months, with extra hungry days.']},
+  {max:182, name:'3 to 6 months', feeds:[6,8], sleepH:[12,16], wake:[90,150], tips:['Rolling, grabbing and babbling are all on the menu this stretch.','Naps usually settle into 3 or 4 a day.','Ask your pediatrician when to start solids. Many families begin near 6 months.']},
+  {max:274, name:'6 to 9 months', feeds:[4,6], sleepH:[12,15], wake:[120,180], tips:['Sitting, crawling and first foods are the big headlines now.','Most babies move to 2 or 3 naps a day.','Peekaboo is serious science at this age.']},
+  {max:99999,name:'9 to 24 months', feeds:[3,5], sleepH:[11,14], wake:[180,300], tips:['Pulling up, first steps and first words tend to arrive in this window.','Most toddlers move to 1 or 2 naps a day.','Milk is still important, and meals now do much of the feeding.']}
+];
+/* typical well-visit timing (days after birth). Your pediatrician's schedule may differ. */
+const VISITS = [['v5','Newborn checkup',5,'3 to 5 days old'],['v30','1 month checkup',30,''],['v60','2 month checkup and vaccines',61,''],['v120','4 month checkup and vaccines',122,''],['v180','6 month checkup and vaccines',183,''],['v270','9 month checkup',274,''],['v365','12 month checkup and vaccines',365,''],['v455','15 month checkup',456,''],['v548','18 month checkup and vaccines',548,''],['v730','2 year checkup',730,'']];
+
+/* ================= state ================= */
+const mkReminders = () => ([
+  {id:'r-feed', type:'feed', label:'Time to feed', mode:'interval', hours:3, on:true, since:now()},
+  {id:'r-sleep', type:'sleep', label:'Sleepy window', mode:'wake', on:true},
+  {id:'r-diaper', type:'diaper', label:'Diaper check', mode:'interval', hours:3, on:false, since:now()}
+]);
+/* S is shared family data. LOC stays on this device only (who is using it, theme, alert inbox, check-ins). */
+let S = {v:2, updated:0, babies:[], skipped:false, units:'us', feedPrefs:{done:false, type:'breast', brand:'', bottleMl:90, intervalH:3}, caregivers:[], logs:[], reminders:mkReminders(), growth:[], stash:[], visits:{}, reportNote:''};
+let LOC = {me:null, theme:'auto', family:null, babyId:null, fired:{}, seen:{}, alerts:[], snoozes:[], checkins:[], muted:false, dev:uid()};
+let UI = {tab:'feed', sheet:null, when:0, feedMode:null, milk:'formula', draft:null, setup:null, toasts:[], voiceMsg:'', listening:false, remTimes:[], remType:'med', both:false, pumpWhere:'fridge', pendingRender:false, showAllVisits:false, ci:{}};
+const META_KEYS = ['babies','units','feedPrefs','caregivers','reminders','growth','stash','visits','reportNote','skipped'];
+let DBNS = null, ref = null, FAM = null, storeMode = 'device', saveTimer = null;
+
+/* ================= small selectors ================= */
+const cur = () => S.babies.find(b => b.id === LOC.babyId) || S.babies[0] || null;
+const babyFirst = () => { const b = cur(); return b && b.name ? b.name.trim().split(/\s+/)[0] : 'Your baby'; };
+const meC = () => S.caregivers.find(c => c.id === LOC.me) || null;
+const cgName = id => { const c = S.caregivers.find(x => x.id === id); return c ? c.name : ''; };
+const cgIdx = id => Math.max(0, S.caregivers.findIndex(x => x.id === id));
+const LG = (kind, since = 0) => { const b = cur(); return b ? S.logs.filter(l => l.b === b.id && (!kind || l.kind === kind) && l.t >= since) : []; };
+const lastOf = (kind, fn) => { const a = LG(kind).filter(l => !fn || fn(l)); return a.length ? a.reduce((x, y) => x.t >= y.t ? x : y) : null; };
+const lastOfAny = kind => { const a = S.logs.filter(l => l.kind === kind); return a.length ? a.reduce((x, y) => x.t >= y.t ? x : y) : null; };
+const lastWake = () => { const l = lastOf('sleep'); return l ? l.end : null; };
+const byTag = l => { const n = l.by ? (cgName(l.by) || l.byN) : l.byN; return n ? `<span class="by b${l.by ? cgIdx(l.by) % 2 : 0}">${esc(n)}</span>` : ''; };
+function avatarHTML(px, baby) {
+  const b = baby || cur(), a = b && b.avatar, st = `width:${px}px;height:${px}px;font-size:${Math.round(px * .58)}px`;
+  if (a && a.type === 'photo') return `<span class="avatar" style="${st}"><img src="${a.value}" alt=""></span>`;
+  return `<span class="avatar" style="${st}" aria-hidden="true">${a && a.type === 'emoji' ? a.value : '👶'}</span>`;
+}
+function ageDays() { const b = cur(); if (!b || !b.dob) return null; return Math.max(0, Math.floor((now() - new Date(b.dob + 'T00:00:00').getTime()) / DAY)); }
+function ageText(d) {
+  if (d == null) return '';
+  if (d < 14) return d + (d === 1 ? ' day old' : ' days old');
+  if (d < 84) return Math.floor(d / 7) + ' weeks old';
+  const m = Math.floor(d / 30.44); if (m < 24) { const w = Math.floor((d - m * 30.44) / 7); return m + ' mo' + (w ? ' ' + w + ' wk' : '') + ' old'; }
+  return Math.floor(d / 365.25) + ' years old';
+}
+const band = () => { const d = ageDays(); return BANDS.find(b => (d == null ? 10 : d) < b.max) || BANDS[4]; };
+const mlToOz = ml => ml / 29.5735;
+const showVol = ml => S.units === 'us' ? (Math.round(mlToOz(ml) * 2) / 2) + ' oz' : Math.round(ml) + ' ml';
+const showWt = kg => S.units === 'us' ? (kg * 2.20462).toFixed(1) + ' lb' : kg.toFixed(2) + ' kg';
+const showHt = cm => S.units === 'us' ? (cm / 2.54).toFixed(1) + ' in' : cm.toFixed(1) + ' cm';
+const showTemp = c => S.units === 'us' ? (c * 9 / 5 + 32).toFixed(1) + '°F' : c.toFixed(1) + '°C';
+const presets = () => S.units === 'us' ? [1, 2, 3, 4, 5].map(o => Math.round(o * 29.5735)) : [30, 60, 90, 120, 150];
+const pumpPresets = () => S.units === 'us' ? [2, 3, 4, 5, 6].map(o => Math.round(o * 29.5735)) : [60, 90, 120, 150, 180];
+
+/* ================= persistence ================= */
+function migrate() {
+  if (!Array.isArray(S.babies)) S.babies = [];
+  ['caregivers','stash','growth','logs'].forEach(k => { if (!Array.isArray(S[k])) S[k] = []; });
+  if (S.baby) { const id = 'b1'; S.babies = [Object.assign({id, sleepActive:S.sleepActive || null, breastActive:S.breastActive || null}, S.baby)]; S.logs.forEach(l => { l.b = l.b || id; }); S.growth.forEach(g => { g.b = g.b || id; }); delete S.baby; delete S.sleepActive; delete S.breastActive; delete S.alerts; delete S.snoozes; delete S.muted; }
+  if (S.skipped && !S.babies.length) S.babies = [{id:uid(), name:'', gender:'', dob:'', avatar:null, weightKg:null, heightCm:null, sleepActive:null, breastActive:null, blank:true}];
+  S.babies.forEach(b => { if (!b.id) b.id = uid(); });
+  S.logs.forEach(l => { if (!l.b && S.babies[0]) l.b = S.babies[0].id; });
+  S.growth.forEach(g => { if (!g.b && S.babies[0]) g.b = S.babies[0].id; });
+  if (!S.feedPrefs || typeof S.feedPrefs !== 'object') S.feedPrefs = {done:false, type:'breast', brand:'', bottleMl:90, intervalH:3};
+  if (!S.visits) S.visits = {}; if (!S.reminders || !S.reminders.length) S.reminders = mkReminders();
+  S.v = 2;
+}
+function loadLocal() {
+  try { const s = JSON.parse(localStorage.getItem('nestling-v1')); if (s && s.v) S = Object.assign(S, s); } catch (e) {}
+  try { const l = JSON.parse(localStorage.getItem('nestling-local-v1')); if (l) LOC = Object.assign(LOC, l); } catch (e) {}
+  if (!LOC.dev) LOC.dev = uid();
+  migrate();
+}
+function saveLocal() { try { localStorage.setItem('nestling-v1', JSON.stringify(S)); localStorage.setItem('nestling-local-v1', JSON.stringify(LOC)); } catch (e) {} }
+function metaOf() { const m = clean(S); delete m.logs; m.dev = LOC.dev; m.updated = now(); return m; }
+function save() {
+  S.updated = now(); saveLocal(); clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    if (S.logs.length > 3000) S.logs = S.logs.slice(-3000);
+    if (LOC.alerts.length > 30) LOC.alerts = LOC.alerts.slice(0, 30);
+    if (FAM) { try { const p = FAM.meta.set(metaOf()); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
+    else if (ref) { try { const p = ref.set(clean(S)); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
+  }, 600);
+}
+const dataOf = s => { if (!s) return null; const ex = typeof s.exists === 'function' ? s.exists() : s.exists; if (ex === false) return null; const d = typeof s.data === 'function' ? s.data() : s.data; return d || null; };
+const docsOf = s => { if (!s) return []; if (s.docs) return s.docs.map(dataOf).filter(Boolean); const out = []; if (s.forEach) s.forEach(d => { const x = dataOf(d); if (x) out.push(x); }); return out; };
+function watch(r, cb) {
+  let stop = null, poll = null;
+  try { const u = r.onSnapshot(cb, () => {}); if (typeof u === 'function') stop = u; } catch (e) {}
+  const pull = async () => { if (document.hidden) return; try { cb(await r.get()); } catch (e) {} };
+  poll = setInterval(pull, 60000); pull();
+  return () => { if (stop) stop(); clearInterval(poll); };
+}
+async function initStore() {
+  try {
+    if (window.claude && window.claude.use) {
+      const u = await withTimeout(window.claude.use('user'), 5000), d = await withTimeout(window.claude.use('db'), 5000);
+      if (u && d) { const id = await withTimeout(u.id(), 5000); DBNS = d; storeMode = 'account'; ref = d.collection('data/users/' + id).doc('baby'); }
+    }
+  } catch (e) { DBNS = null; ref = null; }
+  if (DBNS && LOC.family) { famStart(LOC.family); storeMode = 'family'; return; }
+  if (ref) {
+    try { const data = dataOf(await withTimeout(ref.get(), 6000)); if (data && data.v && (data.updated || 0) > (S.updated || 0)) { S = Object.assign(S, data); migrate(); saveLocal(); } } catch (e) {}
+  }
+}
+/* ---- family sharing: meta doc + one doc per log, so two phones never overwrite each other's entries ---- */
+function famStart(code) {
+  FAM = {code, meta:DBNS.doc('families/' + code), logs:DBNS.collection('families/' + code + '/logs'), pending:new Set(), deleted:new Set(), stops:[]};
+  FAM.stops.push(watch(FAM.meta, onMeta)); FAM.stops.push(watch(FAM.logs, onLogs)); storeMode = 'family';
+}
+function onMeta(snap) {
+  const d = dataOf(snap); if (!d || d.dev === LOC.dev || !d.babies) return;
+  META_KEYS.forEach(k => { if (d[k] !== undefined) S[k] = d[k]; });
+  migrate(); if (!S.babies.find(b => b.id === LOC.babyId)) LOC.babyId = S.babies[0] ? S.babies[0].id : null;
+  saveLocal(); softRender();
+}
+function onLogs(snap) {
+  if (!FAM) return;
+  const remote = docsOf(snap).filter(l => l.id && !FAM.deleted.has(l.id)), ids = new Set(docsOf(snap).map(l => l.id));
+  FAM.pending.forEach(id => { if (ids.has(id)) FAM.pending.delete(id); });
+  FAM.deleted.forEach(id => { if (!ids.has(id)) FAM.deleted.delete(id); });
+  const keep = S.logs.filter(l => FAM.pending.has(l.id) && !ids.has(l.id));
+  S.logs = remote.concat(keep); saveLocal(); softRender();
+}
+function softRender() {
+  const a = document.activeElement;
+  if (UI.sheet || UI.draft || (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName))) { UI.pendingRender = true; return; }
+  render();
+}
+const genCode = () => { const A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; const r = new Uint8Array(10); (window.crypto || {getRandomValues:x => x.forEach((_, i) => x[i] = Math.random() * 255)}).getRandomValues(r); const s = Array.from(r, x => A[x % A.length]).join(''); return s.slice(0, 5) + '-' + s.slice(5); };
+async function famCreate() {
+  if (!DBNS) return snack('Sharing is not available in this view.');
+  const code = genCode();
+  try {
+    await DBNS.doc('families/' + code).set(metaOf());
+    LOC.family = code; famStart(code); S.logs.forEach(l => FAM.pending.add(l.id)); saveLocal();
+    for (const l of S.logs.slice(-800)) { await FAM.logs.doc(l.id).set(clean(l)); }
+    UI.sheet = {type:'share'}; render();
+  } catch (e) { LOC.family = null; if (FAM) { FAM.stops.forEach(f => f()); FAM = null; } storeMode = 'account'; snack('Could not create the code. Check your connection and try again.'); }
+}
+async function famJoin(raw) {
+  if (!DBNS) return snack('Sharing is not available in this view.');
+  const code = raw.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^(.{5})(.{5})$/, '$1-$2');
+  if (code.length < 11) return snack('Enter the 10-character code, like ABCDE-FGH23.');
+  try {
+    const d = dataOf(await withTimeout(DBNS.doc('families/' + code).get(), 10000));
+    if (!d || !d.babies) return snack('That code was not found. Check it and try again.');
+    META_KEYS.forEach(k => { if (d[k] !== undefined) S[k] = d[k]; }); S.logs = []; LOC.family = code; LOC.me = null; LOC.babyId = null; migrate(); saveLocal();
+    famStart(code); UI.sheet = {type:'whoami'}; render();
+  } catch (e) { snack('Could not join. Check your connection and try again.'); }
+}
+function famLeave() { if (FAM) { FAM.stops.forEach(f => f()); FAM = null; } LOC.family = null; storeMode = DBNS ? 'account' : 'device'; saveLocal(); UI.sheet = null; render(); snack('Left the family. This phone keeps its own copy.'); }
+
+/* ================= logging ================= */
+const whenTs = () => now() - UI.when * MIN;
+function commitLog(l) { S.logs.push(l); if (FAM) { FAM.pending.add(l.id); try { const p = FAM.logs.doc(l.id).set(clean(l)); if (p && p.catch) p.catch(() => {}); } catch (e) {} } save(); }
+function touchLog(l) { if (FAM) { try { const p = FAM.logs.doc(l.id).set(clean(l)); if (p && p.catch) p.catch(() => {}); } catch (e) {} } save(); }
+function removeLog(id) { S.logs = S.logs.filter(l => l.id !== id); if (FAM) { FAM.deleted.add(id); try { const p = FAM.logs.doc(id).delete(); if (p && p.catch) p.catch(() => {}); } catch (e) {} } save(); }
+const targetIds = both => { const c = cur(); if (!c) return []; return both && UI.both && S.babies.length > 1 ? [c.id].concat(S.babies.filter(b => b.id !== c.id).map(b => b.id)) : [c.id]; };
+function addLog(o, opt = {}) {
+  const t = o.t || whenTs(); let first = null;
+  targetIds(opt.both).forEach(id => { const l = Object.assign({}, o, {id:uid(), b:id, t, by:LOC.me || null, byN:meC() ? meC().name : ''}); commitLog(l); if (!first) first = l; });
+  UI.when = 0; return first;
+}
+function startSleep(t) { targetIds(true).forEach(id => { const b = S.babies.find(x => x.id === id); if (b && !b.sleepActive) b.sleepActive = {start:t, by:LOC.me || null, byN:meC() ? meC().name : ''}; }); save(); }
+function endSleep(t) {
+  targetIds(true).forEach(id => { const b = S.babies.find(x => x.id === id); if (!b || !b.sleepActive) return; const a = b.sleepActive;
+    commitLog({id:uid(), kind:'sleep', b:id, t:a.start, end:Math.max(t, a.start + MIN), by:LOC.me || null, byN:meC() ? meC().name : '', startBy:a.by || null}); b.sleepActive = null; });
+  save();
+}
+const asleepAny = () => targetIds(true).some(id => { const b = S.babies.find(x => x.id === id); return b && b.sleepActive; });
+const allAsleep = () => targetIds(true).every(id => { const b = S.babies.find(x => x.id === id); return b && b.sleepActive; });
+const nextSide = () => { const l = lastOf('feed', x => x.sub === 'breast'); return l && l.side === 'Left' ? 'Right' : 'Left'; };
+function finishBreast(restart) {
+  const b = cur(), a = b.breastActive; if (!a) return;
+  commitLog({id:uid(), kind:'feed', sub:'breast', side:a.side, dur:Math.max(1, Math.round((now() - a.start) / MIN)), t:a.start, b:b.id, by:LOC.me || null, byN:meC() ? meC().name : ''});
+  b.breastActive = restart ? {side:a.side === 'Left' ? 'Right' : 'Left', start:now()} : null; save();
+}
+/* medicine: warn before a second dose inside the label gap, whoever gave the first */
+function tryGive(rid, forced) {
+  const r = S.reminders.find(x => x.id === rid); if (!r) return;
+  const last = lastOf('med', l => l.rid === rid);
+  if (!forced && last && r.minGapH && now() - last.t < r.minGapH * HR) { UI.sheet = {type:'medConfirm', rid, lastId:last.id}; return render(); }
+  addLog({kind:'med', name:r.label, dose:r.dose || '', rid:r.id}); snack(r.label + ' logged.'); UI.sheet = null; render();
+}
+
+/* ================= predictions: learns this baby's rhythm ================= */
+function buildLearn(lastT, gaps, days, label) {
+  if (days < 7 || gaps.length < 12 || lastT == null) return {ready:false, days:Math.min(days + 1, 7), label};
+  const m = med(gaps.slice(-12)); let hit = 0, tot = 0;
+  for (let i = Math.max(6, gaps.length - 20); i < gaps.length; i++) { const p = med(gaps.slice(Math.max(0, i - 12), i)); tot++; if (Math.abs(gaps[i] - p) <= 30 * MIN) hit++; }
+  return {ready:true, next:lastT + m, median:m, n:Math.min(12, gaps.length), hit, tot, label};
+}
+function learnFeed() {
+  const f = LG('feed').sort((a, b) => a.t - b.t), gaps = []; for (let i = 1; i < f.length; i++) { const g = f[i].t - f[i - 1].t; if (g >= 20 * MIN && g <= 8 * HR) gaps.push(g); }
+  return buildLearn(f.length ? f[f.length - 1].t : null, gaps, f.length ? Math.floor((now() - f[0].t) / DAY) : 0, 'feeds');
+}
+function learnNap() {
+  const s = LG('sleep').sort((a, b) => a.t - b.t), gaps = []; for (let i = 1; i < s.length; i++) { const g = s[i].t - s[i - 1].end; if (g >= 10 * MIN && g <= 8 * HR) gaps.push(g); }
+  return buildLearn(s.length ? s[s.length - 1].end : null, gaps, s.length ? Math.floor((now() - s[0].t) / DAY) : 0, 'naps');
+}
+function learnHTML(L, noun) {
+  if (!L.ready) return `<p class="sub" style="margin-top:6px">Smart guesses for ${noun} unlock after 7 days of logging. You are on day ${L.days} of 7.</p>`;
+  return `<p style="margin:6px 0 0;font-weight:800">Next ${noun} likely around ${fmtT(L.next)}${L.next < now() ? ' (any time now)' : ''}</p>
+    <details><summary>Why this guess?</summary><p class="sub">Typical gap over your last ${L.n} entries is ${durText(L.median)}, added to the last one. In the past ${L.tot} guesses it landed within 30 minutes ${L.hit} times.</p></details>`;
+}
+
+/* ================= reminders engine (alert state lives on this device) ================= */
+function nextDue(r) {
+  if (!r.on) return null;
+  if (r.mode === 'interval') { const l = lastOfAny(r.type); return Math.max(l ? l.t : 0, r.since || 0) + r.hours * HR; }
+  if (r.mode === 'wake') { const w = lastWake(), c = cur(); return c && !c.sleepActive && w ? w + band().wake[1] * MIN : null; }
+  if (r.mode === 'daily' && r.times && r.times.length) {
+    const t0 = sod(), slots = []; r.times.forEach(tt => { const [h, m] = tt.split(':').map(Number); slots.push(t0 + h * HR + m * MIN, t0 + DAY + h * HR + m * MIN); });
+    return slots.filter(s => s > now()).sort((a, b) => a - b)[0];
+  }
+  return null;
+}
+function fireAlert(r, text) {
+  const a = {id:uid(), rid:r.id, t:now(), title:r.label, body:text};
+  LOC.alerts.unshift(a); saveLocal(); UI.toasts.push(a); chime(); renderToasts();
+  try { if ('Notification' in window && Notification.permission === 'granted') new Notification(r.label + ' · ' + babyFirst(), {body:text}); } catch (e) {}
+  if (UI.tab === 'rem' && !UI.sheet) render();
+}
+const once = key => { if (LOC.fired[key]) return false; LOC.fired[key] = 1; const k = Object.keys(LOC.fired); if (k.length > 300) k.slice(0, 100).forEach(x => delete LOC.fired[x]); return true; };
+function checkReminders() {
+  const t = now(); let changed = false;
+  S.reminders.forEach(r => {
+    if (!r.on) return;
+    if (r.mode === 'interval') { const due = nextDue(r); if (due && t >= due && once(r.id + '|' + due)) { changed = true; fireAlert(r, `It has been ${r.hours} hours since the last ${r.type === 'feed' ? 'feed' : 'diaper check'}.`); } }
+    else if (r.mode === 'wake') { const w = lastWake(), c = cur(); if (w && c && !c.sleepActive) { const due = w + band().wake[1] * MIN; if (t >= due && once(r.id + '|' + due)) { changed = true; fireAlert(r, `${babyFirst()} has been awake ${durText(t - w)}. A nap may help.`); } } }
+    else if (r.mode === 'daily') (r.times || []).forEach(tt => { const [h, m] = tt.split(':').map(Number), slot = sod() + h * HR + m * MIN; if (t >= slot && t - slot < 6 * HR && once(r.id + '|' + slot)) { changed = true; fireAlert(r, r.type === 'med' ? `${r.dose ? r.dose + ' of ' : ''}${r.label} is due.` : `${r.label} is due.`); } });
+  });
+  const b = cur(); if (b && b.dob) VISITS.forEach(([k, name, off]) => { if (S.visits[k]) return; const due = new Date(b.dob + 'T00:00:00').getTime() + off * DAY, left = due - t;
+    if (left <= 7 * DAY && left > DAY && once('visit|' + k + '|7')) { changed = true; fireAlert({id:'visit', label:'Checkup coming up'}, `${name} is due in about ${Math.ceil(left / DAY)} days.`); }
+    else if (left <= DAY && left > -2 * DAY && once('visit|' + k + '|1')) { changed = true; fireAlert({id:'visit', label:'Checkup due'}, `${name} is due about now. Call to book if you have not.`); } });
+  LOC.snoozes = LOC.snoozes.filter(z => { if (t >= z.at) { const r = S.reminders.find(x => x.id === z.rid); if (r) fireAlert(r, 'Your snoozed reminder is back.'); return false; } return true; });
+  if (changed) saveLocal();
+}
+let AC = null;
+function unlockAudio() { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); } catch (e) {} }
+function chime() {
+  try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); if (!AC || LOC.muted) return;
+    [660, 880, 1100].forEach((f, i) => { const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime + i * .16; o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.18, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .3); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + .32); });
+  } catch (e) {}
+}
+
+/* ================= theme ================= */
+function applyTheme() { const h = new Date().getHours(), night = LOC.theme === 'night' || (LOC.theme === 'auto' && (h >= 19 || h < 6)); document.documentElement.dataset.mode = night ? 'night' : 'day'; }
+
+/* ================= health rules ================= */
+function redFlag() {
+  const t = lastOf('temp'); const d = ageDays(); if (!t || now() - t.t > 12 * HR || t.c < 38) return null;
+  if (d != null && d <= 90) return {red:true, title:'Call your pediatrician now', body:`A temperature of 100.4°F (38°C) or higher in a baby under 3 months needs a call to your doctor right away, even at night. Last reading: ${showTemp(t.c)} at ${fmtT(t.t)}. If you cannot reach them, go to urgent care or the emergency room.`};
+  return {red:false, title:'Fever reading logged', body:`Last reading: ${showTemp(t.c)} at ${fmtT(t.t)}. Call your pediatrician for advice. Get help right away if baby is hard to wake, is struggling to breathe, or will not feed.`};
+}
+function calmNote() {
+  const d = ageDays(), h = new Date().getHours(), recent = LG('feed', now() - 3 * HR).length;
+  if (d != null && d <= 84 && recent >= 3 && h >= 16 && h <= 23) return ['🌙', `Lots of feeds close together this evening? Cluster feeding is common at ${d < 14 ? d + ' days' : Math.floor(d / 7) + ' weeks'} and usually passes. Keep water and a snack nearby.`];
+  if (d != null && [[17, 24], [38, 45], [80, 88], [115, 125]].some(([a, z]) => d >= a && d <= z)) return ['🌱', 'This age often brings a growth spurt: hungrier, fussier days for 2 to 3 days. It is normal and it passes.'];
+  if (LG(null, now() - DAY).length < 4) return ['📝', 'Totals only count what you log. If a number looks low, a missed tap is the usual reason.'];
+  const b = band(); return ['⭐', b.tips[Math.floor(now() / DAY) % b.tips.length]];
+}
+
+/* ================= voice and typed commands ================= */
+const toMl = (n, unit) => /oz|ounce/.test(unit) ? Math.round(n * 29.5735) : Math.round(n);
+function parseCommand(raw) {
+  const s = ' ' + raw.toLowerCase().replace(/[,!?]/g, ' ') + ' '; let t = null;
+  const ago = s.match(/(\d+)\s*(min|minute|minutes|hour|hours|hr|hrs)\s*ago/); if (ago) t = now() - Number(ago[1]) * (/^h/.test(ago[2]) ? HR : MIN);
+  const L = (o, opt) => { if (t) o.t = t; return addLog(o, opt || {}); };
+  const temp = s.match(/\b(temp|temperature|fever)\b\D{0,12}(\d{2,3}(?:\.\d)?)/);
+  if (temp) { let v = parseFloat(temp[2]); const c = v > 45 ? (v - 32) * 5 / 9 : v; if (c < 30 || c > 43) return 'That temperature looks off. Try "temperature 98.6".'; L({kind:'temp', c:Math.round(c * 10) / 10}); const rf = redFlag(); return `Logged: ${showTemp(c)}.${rf && rf.red ? ' This needs a call to your pediatrician now.' : ''}`; }
+  if (/\b(woke|wake|awake|woken)\b/.test(s)) { if (!asleepAny()) return 'Baby is not marked as sleeping right now.'; endSleep(t || now()); return 'Logged: woke up. Good morning, sunshine.'; }
+  if (/\b(asleep|fell asleep|sleeping|nap|napping|went down|sleep)\b/.test(s)) { if (allAsleep()) return 'Already tracking a sleep.'; startSleep(t || now()); return 'Sleep started. Sweet dreams.'; }
+  if (/\b(poop|poopy|poo|dirty|stool|bowel|number two)\b/.test(s)) { const wet = /\b(pee|wet|both)\b/.test(s); L({kind:'diaper', type:wet ? 'both' : 'poop'}, {both:true}); return wet ? 'Logged: wet and dirty diaper.' : 'Logged: dirty diaper.'; }
+  if (/\b(pee|peed|wet|number one)\b/.test(s) || /\bboth\b/.test(s)) { const both = /\bboth\b/.test(s); L({kind:'diaper', type:both ? 'both' : 'pee'}, {both:true}); return 'Logged: ' + (both ? 'wet and dirty diaper.' : 'wet diaper.'); }
+  if (/\b(diaper|nappy)\b/.test(s)) return 'Say "wet", "dirty" or "both" so I know which one to log.';
+  if (/\b(gave|given|medicine|medication|dose|vitamin|tylenol|drops)\b/.test(s)) {
+    const r = S.reminders.find(x => x.type === 'med' && s.includes(x.label.toLowerCase()));
+    if (r) { const last = lastOf('med', l => l.rid === r.id); if (r.minGapH && last && now() - last.t < r.minGapH * HR) return `${(last.by && cgName(last.by)) || last.byN || 'Someone'} gave ${r.label} ${ago(now() - last.t)}. Open Alerts to confirm another dose.`; L({kind:'med', name:r.label, dose:r.dose || '', rid:r.id}); return `Logged: ${r.label}.`; }
+    const nm = /vitamin d/.test(s) ? 'Vitamin D' : ((raw.match(/(?:gave|given)\s+(?:her|him|baby|them)?\s*([a-z0-9 ]{2,24}?)(?:\s+(?:at|ml|mg)|$)/i) || [, 'Medicine'])[1].trim() || 'Medicine');
+    L({kind:'med', name:nm.charAt(0).toUpperCase() + nm.slice(1), dose:''}); return `Logged: ${nm}.`;
+  }
+  const amt = s.match(/(\d+(?:\.\d+)?)\s*(ml|milliliters?|oz|ounces?)/), mins = s.match(/(\d+)\s*(?:min|minutes)(?!\s*ago)/), side = /\bleft\b/.test(s) ? 'Left' : /\bright\b/.test(s) ? 'Right' : null;
+  if (/\bpump(ed|ing)?\b/.test(s) && amt) { const ml = toMl(Number(amt[1]), amt[2]); S.stash.push({id:uid(), ml, t:t || now(), where:/freez/.test(s) ? 'freezer' : 'fridge', by:LOC.me || null, byN:meC() ? meC().name : ''}); save(); return `Logged: pumped ${showVol(ml)} into the ${/freez/.test(s) ? 'freezer' : 'fridge'}.`; }
+  if (/\b(breast|nurse|nursed|nursing)\b/.test(s) || (side && !amt)) { L({kind:'feed', sub:'breast', side:side || nextSide(), dur:mins ? Number(mins[1]) : null}); return `Logged: breastfeed${side ? ', ' + side.toLowerCase() : ''}${mins ? ', ' + mins[1] + ' min' : ''}.`; }
+  if (amt || /\b(bottle|formula|pumped|expressed|fed|feed|feeding)\b/.test(s)) { const ml = amt ? toMl(Number(amt[1]), amt[2]) : S.feedPrefs.bottleMl, milk = /pumped|expressed|breast milk/.test(s) ? 'milk' : 'formula'; L({kind:'feed', sub:'bottle', ml, milk, brand:milk === 'formula' ? S.feedPrefs.brand : ''}, {both:true}); return `Logged: bottle, ${showVol(ml)}.`; }
+  return 'I did not catch that. Try "left breast 10 minutes", "bottle 3 ounces", "wet diaper", "fell asleep", "temperature 98.6" or "gave vitamin D".';
+}
+function startListening() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { UI.voiceMsg = 'Voice capture is not available in this browser. Tap the microphone on your keyboard to dictate, or just type.'; return renderSheet(); }
+  try {
+    const rec = new SR(); rec.lang = 'en-US'; rec.interimResults = false; UI.listening = true; UI.voiceMsg = 'Listening…'; renderSheet();
+    rec.onresult = e => { const txt = e.results[0][0].transcript; const i = $('#voiceIn'); if (i) i.value = txt; UI.listening = false; UI.voiceMsg = parseCommand(txt); render(); };
+    rec.onerror = e => { UI.listening = false; UI.voiceMsg = e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'This page cannot use the microphone here. Use the microphone on your keyboard to dictate, or type your note.' : 'I could not hear that. Try again or type it.'; renderSheet(); };
+    rec.onend = () => { if (UI.listening) { UI.listening = false; renderSheet(); } };
+    rec.start();
+  } catch (e) { UI.listening = false; UI.voiceMsg = 'This page cannot use the microphone here. Use the microphone on your keyboard to dictate, or type your note.'; renderSheet(); }
+}
+
+/* ================= profile form ================= */
+function draftFrom(b, mode) {
+  return {mode, name:b ? b.name : '', gender:b ? b.gender : '', dob:b ? b.dob : '', avatar:b ? b.avatar : null, err:'',
+    w:b && b.weightKg ? (S.units === 'us' ? (b.weightKg * 2.20462).toFixed(1) : b.weightKg.toFixed(2)) : '', hgt:b && b.heightCm ? (S.units === 'us' ? (b.heightCm / 2.54).toFixed(1) : b.heightCm.toFixed(1)) : ''};
+}
+function profileHTML() {
+  const D = UI.draft, us = S.units === 'us', av = D.avatar, edit = D.mode !== 'onboard';
+  const preview = av && av.type === 'photo' ? `<span class="avatar" style="width:84px;height:84px"><img src="${av.value}" alt="Chosen photo"></span>` : `<span class="avatar" style="width:84px;height:84px;font-size:48px">${av && av.type === 'emoji' ? av.value : '👶'}</span>`;
+  return `<div class="wrap ob">
+    ${edit ? `<h2 style="font-size:28px;margin:18px 0 10px">${D.mode === 'new' ? 'Add another baby' : 'Baby details'}</h2>` : `<div class="brand"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14c0-5 4-9 8-9s8 4 8 9"/><path d="M3 14h18l-2 5H5z"/></svg>Nestling</div><h1>Welcome, little one</h1><p class="sub" style="font-size:17px;margin-bottom:14px">Tell us a bit about your baby so the tips and reminders fit their age. Everything here is optional.</p>`}
+    <div class="card" style="display:flex;flex-direction:column;gap:16px">
+      <div class="avpick">${preview}<div style="flex:1;min-width:200px"><b>Photo or emoji <span class="sub">(optional)</span></b>
+        <div class="row" style="margin-top:6px"><button class="btn soft small" data-act="pickPhoto" type="button">Upload photo or bitmoji</button>${av ? '<button class="btn ghost small" data-act="clearAvatar" type="button">Remove</button>' : ''}</div>
+        <input id="photoIn" type="file" accept="image/*" class="visually" tabindex="-1" aria-label="Upload a photo or bitmoji image"></div></div>
+      <div class="emojis" role="group" aria-label="Pick an emoji">${EMOJIS.map(e => `<button type="button" data-act="emoji" data-v="${e}" aria-pressed="${!!av && av.type === 'emoji' && av.value === e}" aria-label="Emoji ${e}">${e}</button>`).join('')}</div>
+      <div class="field"><label class="f" for="d-name">Baby's name</label><input class="inp" id="d-name" data-d="name" value="${esc(D.name)}" placeholder="e.g. Luna" autocomplete="off"></div>
+      <div><label class="f" id="gl">Gender</label><div class="chips" role="group" aria-labelledby="gl">${[['girl', 'Girl'], ['boy', 'Boy'], ['na', 'Prefer not to say']].map(([v, t]) => `<button type="button" class="chip ${v === 'girl' ? 'pk' : ''}" data-act="gender" data-v="${v}" aria-pressed="${D.gender === v}">${t}</button>`).join('')}</div></div>
+      <div class="field"><label class="f" for="d-dob">Date of birth</label><input class="inp" type="date" id="d-dob" data-d="dob" value="${esc(D.dob)}" max="${new Date().toISOString().slice(0, 10)}"></div>
+      <div><div class="row" style="justify-content:space-between;margin-bottom:6px"><b>Birth measurements</b><div class="chips" role="group" aria-label="Units"><button type="button" class="chip" data-act="unit" data-v="us" aria-pressed="${us}">lb / in</button><button type="button" class="chip" data-act="unit" data-v="metric" aria-pressed="${!us}">kg / cm</button></div></div>
+        <div class="grid2"><div class="field"><label class="f" for="d-w">Weight (${us ? 'lb' : 'kg'})</label><input class="inp" id="d-w" data-d="w" inputmode="decimal" value="${esc(D.w)}" placeholder="${us ? '7.5' : '3.4'}"></div><div class="field"><label class="f" for="d-h">Height (${us ? 'in' : 'cm'})</label><input class="inp" id="d-h" data-d="hgt" inputmode="decimal" value="${esc(D.hgt)}" placeholder="${us ? '20' : '50'}"></div></div></div>
+      ${D.err ? `<p class="err" role="alert">${esc(D.err)}</p>` : ''}
+      <div class="row"><button class="btn" data-act="saveProfile" type="button" style="flex:1">${edit ? 'Save' : 'Save and start'}</button>${edit ? '<button class="btn ghost" data-act="cancelProfile" type="button">Cancel</button>' : '<button class="btn ghost" data-act="skipProfile" type="button">Skip for now</button>'}</div>
+    </div><p class="foot">Tiny feet, big feelings. Take your time.</p></div>`;
+}
+
+/* ================= shell ================= */
+function render() {
+  UI.pendingRender = false; applyTheme();
+  const root = $('#app');
+  if (UI.draft) { root.innerHTML = profileHTML(); return; }
+  if (!S.babies.length && S.skipped) { migrate(); save(); }
+  if (!S.babies.length) { UI.draft = draftFrom(null, 'onboard'); root.innerHTML = profileHTML(); return; }
+  if (!LOC.babyId || !S.babies.find(b => b.id === LOC.babyId)) LOC.babyId = S.babies[0] ? S.babies[0].id : null;
+  if (!LOC.me && !LOC.askedWho && !UI.sheet) { UI.sheet = {type:'whoami'}; }
+  const d = ageDays(), unread = LOC.alerts.some(a => now() - a.t < 3 * HR) && UI.tab !== 'rem', me = meC();
+  const night = document.documentElement.dataset.mode === 'night';
+  root.innerHTML = `<div class="top"><div class="wrap">
+      <div class="bar"><button class="who" data-act="editProfile" type="button" aria-label="Edit baby details">${avatarHTML(48)}<span style="min-width:0"><b>${esc(babyFirst())}</b><small>${d != null ? esc(ageText(d)) : 'Add details for tips'}</small></span></button>
+        <div class="row" style="gap:8px;flex-wrap:nowrap"><button class="iconbtn" data-act="theme" type="button" aria-label="Display: ${LOC.theme}. Tap to change">${night ? '🌙' : '☀️'}</button><button class="iconbtn" data-act="mute" type="button" aria-label="${LOC.muted ? 'Unmute alert sound' : 'Mute alert sound'}">${LOC.muted ? '🔕' : '🔔'}</button><button class="iconbtn" data-act="settings" type="button" aria-label="Settings">${ICON.gear}</button></div></div>
+      <div class="tabs" role="tablist">${TABS.map(([k, t]) => `<button class="tab" role="tab" data-act="tab" data-v="${k}" aria-selected="${UI.tab === k}">${ICON[k]}${t}${k === 'rem' && unread ? '<i class="dot"></i>' : ''}</button>`).join('')}</div>
+      <div class="subbar"><button class="asme" data-act="whoami" type="button">Logging as: ${me ? esc(me.name) : 'tap to choose'} ▾</button>${S.babies.length > 1 ? `<div class="chips" role="group" aria-label="Choose baby">${S.babies.map(b => `<button class="chip" style="min-height:34px;padding:4px 10px;font-size:14px" data-act="pickBaby" data-id="${b.id}" aria-pressed="${!UI.both && b.id === LOC.babyId}">${esc((b.name || 'Baby').split(' ')[0])}</button>`).join('')}<button class="chip pk" style="min-height:34px;padding:4px 10px;font-size:14px" data-act="pickBaby" data-id="both" aria-pressed="${UI.both}">Both</button></div>` : ''}</div></div></div>
+    <div class="wrap"><main class="view" id="view" role="tabpanel">${alertsTop()}${handoverHTML()}${viewHTML()}</main>
+      <p class="foot">${storeMode === 'family' ? 'Live sync on · family ' + esc(LOC.family) : storeMode === 'account' ? 'Saved to your account' : 'Saved on this device'} · General guidance only, not medical advice.</p></div>
+    <button class="fab" data-act="voiceOpen" type="button" aria-label="Log with your voice">${ICON.mic}</button><div id="sheetHost"></div>`;
+  renderSheet(); renderToasts(); tick();
+}
+function alertsTop() {
+  const rf = redFlag(); if (!rf) return '';
+  return `<section class="card ${rf.red ? 'redflag' : 'hand'}" role="alert"><h2>${esc(rf.title)}</h2><p style="margin:0">${esc(rf.body)}</p></section>`;
+}
+function handoverHTML() {
+  const me = meC(); if (!me || S.caregivers.length < 2) return '';
+  const since = LOC.seen[me.id]; if (!since) { LOC.seen[me.id] = now(); saveLocal(); return ''; }
+  const ev = LG().filter(l => l.t > since && l.by && l.by !== me.id); if (!ev.length) return '';
+  const by = {}; ev.forEach(l => { const n = cgName(l.by) || l.byN || 'Someone'; (by[n] = by[n] || {feed:0, sleep:0, diaper:0, med:0}); if (by[n][l.kind] != null) by[n][l.kind]++; });
+  const parts = Object.entries(by).map(([n, c]) => `<b>${esc(n)}</b>: ${[c.feed && c.feed + (c.feed === 1 ? ' feed' : ' feeds'), c.sleep && c.sleep + (c.sleep === 1 ? ' sleep' : ' sleeps'), c.diaper && c.diaper + (c.diaper === 1 ? ' diaper' : ' diapers'), c.med && c.med + (c.med === 1 ? ' medicine' : ' medicines')].filter(Boolean).join(', ')}`);
+  const lf = ev.filter(l => l.kind === 'feed').sort((a, b) => b.t - a.t)[0];
+  return `<section class="card hand"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h3>Since ${esc(me.name)}'s last check</h3><p style="margin:4px 0 0">${parts.join('<br>')}</p>${lf ? `<p class="sub" style="margin-top:4px">Last feed logged ${ago(now() - lf.t)}.</p>` : ''}</div><button class="btn small ghost" data-act="seen" type="button">Got it</button></div></section>`;
+}
+const viewHTML = () => ({feed:feedHTML, diaper:diaperHTML, sleep:sleepHTML, rem:remHTML, ins:insightsHTML})[UI.tab]();
+const bothBanner = () => UI.both && S.babies.length > 1 ? `<div class="note pk">Logging for ${S.babies.map(b => esc((b.name || 'Baby').split(' ')[0])).join(' and ')} at once.</div>` : '';
+const whenSel = lbl => `<div class="row" style="justify-content:center"><label class="sub" for="when" style="font-weight:700">${lbl || 'When?'}</label><select id="when" class="inp" style="width:auto;min-height:40px;padding:6px 10px" data-bind="when">${[[0, 'Just now'], [10, '10 min ago'], [30, '30 min ago'], [60, '1 hour ago'], [120, '2 hours ago']].map(([v, t]) => `<option value="${v}" ${UI.when === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>`;
+function histHTML(kind, limit, fmt) {
+  const a = LG(kind).sort((x, y) => y.t - x.t).slice(0, limit); if (!a.length) return '';
+  return `<ul class="hist">${a.map(l => `<li><time><span class="day">${dayLabel(l.t)}</span>${fmtT(l.t)}</time><span class="d">${fmt(l)}${byTag(l)}</span><button class="x" data-act="del" data-id="${l.id}" aria-label="Delete this entry" type="button">×</button></li>`).join('')}</ul>`;
+}
+
+/* ================= feed tab ================= */
+function feedHTML() {
+  const P = S.feedPrefs, b = cur();
+  if (!P.done) return feedSetupHTML();
+  const lf = lastOf('feed'), mode = UI.feedMode || (P.type === 'formula' ? 'bottle' : 'breast'), r = S.reminders.find(x => x.id === 'r-feed'), due = r && nextDue(r), L = learnFeed();
+  const hero = `<section class="card hero"><div><small class="sub" style="font-weight:800">LAST FED</small><div class="big" ${lf ? `data-since="${lf.t}"` : ''}>${lf ? durText(now() - lf.t) : '—'}</div>
+    <p>${lf ? (lf.sub === 'breast' ? `Breast · ${lf.side || ''}${lf.dur ? ' · ' + lf.dur + ' min' : ''}` : `Bottle · ${showVol(lf.ml)}`) + byTag(lf) : 'No feeds yet. Tiny tummies need big snacks.'}</p>
+    ${L.ready ? learnHTML(L, 'feed') : (due && r.on ? `<p class="sub">Next feed due <b data-until="${due}">${due <= now() ? 'now' : 'in ' + durText(due - now())}</b></p>` + learnHTML(L, 'feeds') : learnHTML(L, 'feeds'))}</div><div style="font-size:54px" aria-hidden="true">🍼</div></section>`;
+  const modes = [['breast', 'Breast'], ['bottle', 'Bottle']]; if (P.type !== 'formula') modes.push(['pump', 'Pump + stash']);
+  const seg = `<div class="chips" role="group" aria-label="Feeding type">${modes.map(([k, t]) => `<button class="chip ${k === 'bottle' ? 'pk' : ''}" data-act="feedMode" data-v="${k}" aria-pressed="${mode === k}">${t}</button>`).join('')}</div>`;
+  let body = '';
+  if (mode === 'breast') {
+    const a = b.breastActive;
+    body = a ? `<section class="card" style="text-align:center"><span class="pill info">${a.side} side</span><div class="big" style="font-size:54px;margin:10px 0" data-clock="${a.start}">${clockText(now() - a.start)}</div><div class="grid2"><button class="btn ghost" data-act="breastSwitch" type="button">Switch to ${a.side === 'Left' ? 'right' : 'left'}</button><button class="btn pink" data-act="breastDone" type="button">Done</button></div></section>`
+      : `<section class="card"><div class="row" style="justify-content:space-between"><h2>Breastfeed</h2><span class="pill info">Start with ${nextSide().toLowerCase()} next</span></div><p class="sub" style="margin-bottom:12px">Tap a side to start the timer. Tap Done when finished.</p>
+      <div class="grid2"><button class="logbtn b" data-act="breastStart" data-side="Left" type="button">${ICON.feed}Left</button><button class="logbtn p" data-act="breastStart" data-side="Right" type="button">${ICON.feed}Right</button></div>
+      <p class="sub" style="margin:14px 0 8px"><b>Already finished?</b> Log ${nextSide().toLowerCase()} side:</p><div class="chips">${[5, 10, 15, 20].map(m => `<button class="chip" data-act="breastQuick" data-m="${m}" type="button">${m} min</button>`).join('')}</div>${whenSel()}</section>`;
+  } else if (mode === 'bottle') {
+    body = `<section class="card"><h2>Bottle</h2><p class="sub" style="margin-bottom:10px">${UI.milk === 'formula' && P.brand ? 'Formula: ' + esc(P.brand) + '. ' : ''}Tap an amount to log it.</p>${bothBanner()}
+      ${P.type !== 'formula' ? `<div class="chips" style="margin:10px 0" role="group" aria-label="Milk type"><button class="chip" data-act="milk" data-v="formula" aria-pressed="${UI.milk === 'formula'}">Formula</button><button class="chip pk" data-act="milk" data-v="milk" aria-pressed="${UI.milk === 'milk'}">Pumped milk</button></div>` : ''}
+      <div class="grid3" style="grid-template-columns:repeat(auto-fit,minmax(88px,1fr));margin-top:10px">${presets().map(ml => `<button class="logbtn b" style="min-height:84px;font-size:24px" data-act="bottle" data-ml="${ml}" type="button">${S.units === 'us' ? Math.round(mlToOz(ml)) : ml}<small>${S.units === 'us' ? 'oz' : 'ml'}</small></button>`).join('')}</div>
+      <div class="row" style="margin-top:12px"><input class="inp" id="customMl" inputmode="decimal" placeholder="Other (${S.units === 'us' ? 'oz' : 'ml'})" style="flex:1" aria-label="Custom amount"><button class="btn soft" data-act="bottleCustom" type="button">Log</button></div>${whenSel()}</section>`;
+  } else body = pumpHTML();
+  const hist = histHTML('feed', 6, l => l.sub === 'breast' ? `Breast · ${l.side || ''}${l.dur ? ' · ' + l.dur + ' min' : ''}` : `Bottle · ${showVol(l.ml)} · ${l.milk === 'milk' ? 'Pumped milk' : esc(l.brand || 'Formula')}`);
+  return hero + seg + body + `<section class="card"><div class="row" style="justify-content:space-between"><h3>Recent feeds</h3><button class="link" data-act="editFeedSetup" type="button">Feeding setup</button></div>${hist || '<p class="empty"><span>🐣</span>Nothing logged yet.</p>'}</section>`;
+}
+function pumpHTML() {
+  const bags = S.stash.filter(x => !x.used).map(x => Object.assign({exp:x.t + (x.where === 'freezer' ? 180 : 4) * DAY}, x)).sort((a, b) => a.exp - b.exp);
+  const sum = w => bags.filter(x => x.where === w).reduce((n, x) => n + x.ml, 0);
+  return `<section class="card"><h2>Pumped milk</h2><p class="sub" style="margin-bottom:10px">Tap an amount to add a bag to your stash.</p>
+    <div class="chips" style="margin-bottom:10px" role="group" aria-label="Where is it stored"><button class="chip" data-act="pumpWhere" data-v="fridge" aria-pressed="${UI.pumpWhere === 'fridge'}">Fridge</button><button class="chip pk" data-act="pumpWhere" data-v="freezer" aria-pressed="${UI.pumpWhere === 'freezer'}">Freezer</button></div>
+    <div class="grid3" style="grid-template-columns:repeat(auto-fit,minmax(88px,1fr))">${pumpPresets().map(ml => `<button class="logbtn p" style="min-height:84px;font-size:24px" data-act="pump" data-ml="${ml}" type="button">${S.units === 'us' ? Math.round(mlToOz(ml)) : ml}<small>${S.units === 'us' ? 'oz' : 'ml'}</small></button>`).join('')}</div>
+    <div class="grid2" style="margin-top:12px"><div class="stat"><small>In the fridge</small><b class="big" style="font-size:24px">${showVol(sum('fridge'))}</b></div><div class="stat pk"><small>In the freezer</small><b class="big" style="font-size:24px">${showVol(sum('freezer'))}</b></div></div>
+    <div class="note" style="margin-top:12px">Guide: fridge up to 4 days, freezer best within 6 months. Use the oldest bag first.</div></section>
+  <section class="card"><h3>Use first</h3>${bags.length ? `<div>${bags.map((x, i) => { const left = Math.ceil((x.exp - now()) / DAY); return `<div class="rem"><div class="t"><b>${showVol(x.ml)} · ${x.where === 'fridge' ? 'Fridge' : 'Freezer'}${byTag(x)}</b><span class="sub">Stored ${dayLabel(x.t)} · use by ${fmtD(x.exp)}</span><br><span class="pill ${left <= 1 ? 'warn' : 'info'}" style="margin-top:4px">${left <= 0 ? 'Past the guide' : left + (left === 1 ? ' day left' : ' days left')}</span>${i === 0 ? ' <span class="pill ok">Oldest</span>' : ''}</div>
+      <button class="btn soft small" data-act="useBag" data-id="${x.id}" type="button">Use</button><button class="xbtn" data-act="tossBag" data-id="${x.id}" aria-label="Remove this bag" type="button">×</button></div>`; }).join('')}</div>` : '<p class="empty"><span>🧊</span>No bags in the stash yet.</p>'}</section>`;
+}
+function feedSetupHTML() {
+  const Q = UI.setup || (UI.setup = Object.assign({}, S.feedPrefs, {other:false})), formula = Q.type !== 'breast';
+  const opt = (k, v, t, cls) => `<button class="chip ${cls || ''}" type="button" data-act="setup" data-k="${k}" data-v="${v}" aria-pressed="${String(Q[k]) === String(v)}">${t}</button>`;
+  return `<section class="card"><div class="row"><span style="font-size:40px" aria-hidden="true">🍼</span><div><h2>Let's set up feeding</h2><p class="sub">${formula ? 4 : 2} quick questions. You can change them later.</p></div></div>
+    <div style="display:flex;flex-direction:column;gap:18px;margin-top:16px">
+    <div><label class="f" id="q1">1. How is ${esc(babyFirst())} fed?</label><div class="chips" role="group" aria-labelledby="q1">${opt('type', 'breast', 'Breast milk')}${opt('type', 'formula', 'Formula', 'pk')}${opt('type', 'both', 'Both')}</div></div>
+    ${formula ? `<div><label class="f" id="q2">2. Which formula brand?</label><div class="chips" role="group" aria-labelledby="q2">${FORMULAS.map(f => `<button class="chip pk" type="button" data-act="brand" data-v="${esc(f)}" aria-pressed="${f === 'Other' ? !!Q.other : (!Q.other && Q.brand === f)}">${esc(f)}</button>`).join('')}</div>${Q.other ? `<input class="inp" id="brandOther" style="margin-top:8px" placeholder="Type the brand" value="${esc(Q.brand)}" aria-label="Formula brand">` : ''}</div>
+    <div><label class="f" id="q3">3. Usual bottle size?</label><div class="chips" role="group" aria-labelledby="q3">${presets().map(ml => `<button class="chip" type="button" data-act="setup" data-k="bottleMl" data-v="${ml}" aria-pressed="${Number(Q.bottleMl) === ml}">${showVol(ml)}</button>`).join('')}</div></div>` : ''}
+    <div><label class="f" id="q4">${formula ? '4' : '2'}. Remind you to feed every…</label><div class="chips" role="group" aria-labelledby="q4">${[2, 2.5, 3, 4].map(h => opt('intervalH', h, h + ' hours')).join('')}${opt('intervalH', 0, 'No reminder')}</div></div></div>
+    <div class="row" style="margin-top:18px"><button class="btn" data-act="saveFeedSetup" type="button" style="flex:1">Save and start logging</button><button class="btn ghost" data-act="skipFeedSetup" type="button">Skip for now</button></div></section>`;
+}
+
+/* ================= diaper tab ================= */
+const DT = {pee:'Wet', poop:'Dirty', both:'Wet + dirty'};
+function diaperHTML() {
+  const td = LG('diaper', sod()), wet = td.filter(l => l.type !== 'poop').length, dirty = td.filter(l => l.type !== 'pee').length, last = lastOf('diaper');
+  return `<section class="card hero"><div><small class="sub" style="font-weight:800">LAST CHANGE</small><div class="big" ${last ? `data-since="${last.t}"` : ''}>${last ? durText(now() - last.t) : '—'}</div><p>${last ? DT[last.type] + byTag(last) : 'A clean slate. For now.'}</p></div><div style="font-size:54px" aria-hidden="true">🧷</div></section>
+  <section class="card"><h2>Log a change</h2><p class="sub" style="margin-bottom:12px">One tap saves it. You can add details after.</p>${bothBanner()}
+    <div class="grid3" style="margin-top:8px"><button class="logbtn b" data-act="diaper" data-v="pee" type="button">${ICON.diaper}Wet</button><button class="logbtn p" data-act="diaper" data-v="poop" type="button"><svg viewBox="0 0 24 24"><path d="M12 4c1.5 1 2 2.2 1.5 3.5 2 .3 3.5 1.8 3.5 3.5 1.8.4 3 1.8 3 3.5 0 2.2-2 3.5-4.5 3.5h-7C6 18 4 16.7 4 14.5c0-1.7 1.2-3 3-3.5 0-1.7 1.5-3.2 3.5-3.5C10 6 10.5 5 12 4z"/></svg>Dirty</button><button class="logbtn m" data-act="diaper" data-v="both" type="button">${ICON.diaper}Both</button></div>${whenSel()}</section>
+  <div class="grid2"><div class="stat"><small>Wet today</small><span class="big">${wet}</span></div><div class="stat pk"><small>Dirty today</small><span class="big">${dirty}</span></div></div>
+  <section class="card"><h3>Recent changes</h3>${histHTML('diaper', 8, l => DT[l.type] + (l.color ? ' · ' + esc(l.color) : '')) || '<p class="empty"><span>💧</span>Nothing logged yet.</p>'}</section>`;
+}
+
+/* ================= sleep tab ================= */
+function sleepHTML() {
+  const b = cur(), a = b.sleepActive, w = lastWake(), bd = band(), t0 = sod(), L = learnNap();
+  const sess = LG('sleep').filter(l => l.end > t0), total = sess.reduce((n, l) => n + (Math.min(l.end, now()) - Math.max(l.t, t0)), 0) + (a ? now() - Math.max(a.start, t0) : 0), longest = sess.reduce((m, l) => Math.max(m, l.end - l.t), 0);
+  const startedBy = a && (a.by ? cgName(a.by) : a.byN);
+  return `<section class="card" style="text-align:center"><h2>${a ? esc(babyFirst()) + ' is sleeping' : 'Sleep'}</h2>${bothBanner()}
+    <button class="sleepbtn ${a ? 'on' : ''}" data-act="sleepToggle" type="button">${a ? `<span class="big" data-since="${a.start}">${durText(now() - a.start)}</span>Wake up` : `${ICON.sleep.replace('<svg', '<svg width="44" height="44" style="fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"')}Start sleep`}</button>
+    <p class="sub">${a ? `Asleep since <b>${fmtT(a.start)}</b>${startedBy ? ' (started by ' + esc(startedBy) + ')' : ''}. You can lock your phone. Only the start time is saved, so nothing runs in the background.` : 'Tap when baby falls asleep.'}</p>
+    <div style="margin-top:6px">${whenSel(a ? 'Woke up' : 'Fell asleep')}</div></section>
+  ${!a ? `<section class="card"><div class="row" style="justify-content:space-between"><div><small class="sub" style="font-weight:800">AWAKE FOR</small><div class="big" ${w ? `data-since="${w}"` : ''}>${w ? durText(now() - w) : '—'}</div></div>
+    <div style="max-width:220px"><span class="pill info">Typical at this age: ${bd.wake[0]} to ${bd.wake[1]} min</span><p class="sub" style="margin-top:6px">A <b>wake window</b> is how long baby can stay awake before getting overtired.</p></div></div>${learnHTML(L, 'sleep')}</section>` : ''}
+  <div class="grid3"><div class="stat"><small>Total today</small><b class="big" style="font-size:26px">${(total / HR).toFixed(1)}h</b></div><div class="stat pk"><small>Naps today</small><b class="big" style="font-size:26px">${sess.length}</b></div><div class="stat"><small>Longest</small><b class="big" style="font-size:26px">${durText(longest).replace('just now', '0m')}</b></div></div>
+  <section class="card"><h3>Add a past sleep</h3><p class="sub" style="margin-bottom:10px">Forgot to tap? Fill in the times.</p>
+    <div class="grid2"><div class="field"><label class="f" for="ps-s">Fell asleep</label><input class="inp" type="datetime-local" id="ps-s"></div><div class="field"><label class="f" for="ps-e">Woke up</label><input class="inp" type="datetime-local" id="ps-e"></div></div>
+    <button class="btn soft block" style="margin-top:10px" data-act="pastSleep" type="button">Save sleep</button></section>
+  <section class="card"><h3>Recent sleep</h3>${histHTML('sleep', 8, l => `Slept <b>${durText(l.end - l.t)}</b> <span class="sub">(${fmtT(l.t)} to ${fmtT(l.end)})</span>`) || '<p class="empty"><span>🌙</span>No sleep logged yet.</p>'}</section>`;
+}
+
+/* ================= alerts tab ================= */
+function schedText(r) {
+  if (r.mode === 'interval') return `Every ${r.hours} hours after the last ${r.type === 'feed' ? 'feed' : 'change'}`;
+  if (r.mode === 'wake') return `When awake longer than ${band().wake[1]} min`;
+  return 'Daily at ' + (r.times || []).map(t => { const [h, m] = t.split(':').map(Number); return fmtT(new Date().setHours(h, m, 0, 0)); }).join(', ');
+}
+function visitsHTML() {
+  const bb = cur(); if (!bb || !bb.dob) return `<section class="card"><h3>Checkups and vaccines</h3><p class="sub" style="margin:4px 0 10px">Add ${esc(babyFirst())}'s birth date to see the usual checkup schedule.</p><button class="btn soft" data-act="editProfile" type="button">Add birth date</button></section>`;
+  const dob = new Date(bb.dob + 'T00:00:00').getTime(), rows = VISITS.map(([k, name, off]) => ({k, name, due:dob + off * DAY, done:S.visits[k]})).sort((a, b) => a.due - b.due);
+  const upcoming = rows.filter(r => !r.done && r.due > now() - 60 * DAY), shown = UI.showAllVisits ? rows : upcoming.slice(0, 3);
+  return `<section class="card"><h3>Checkups and vaccines</h3><p class="sub" style="margin:2px 0 6px">Typical timing. Your pediatrician's schedule may differ.</p>${shown.map(r => { const d = Math.round((r.due - now()) / DAY);
+    return `<div class="rem"><div class="t"><b>${esc(r.name)}</b><span class="sub">Around ${fmtD(r.due)}</span><br>${r.done ? `<span class="pill ok">Done ${fmtD(r.done)}</span>` : `<span class="pill ${d < 0 ? 'warn' : d <= 14 ? 'info' : 'none'}">${d < 0 ? Math.abs(d) + ' days past' : d === 0 ? 'Due today' : 'In ' + d + ' days'}</span>`}</div>
+      <button class="btn soft small" data-act="visit" data-k="${r.k}" type="button">${r.done ? 'Undo' : 'Mark done'}</button></div>`; }).join('') || '<p class="empty"><span>🎉</span>All caught up.</p>'}
+    <button class="link" data-act="allVisits" type="button">${UI.showAllVisits ? 'Show fewer' : 'Show full schedule'}</button></section>`;
+}
+function remHTML() {
+  const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+  return `<section class="card"><div class="row" style="justify-content:space-between"><div><h2>Alerts and reminders</h2><p class="sub">Feeding, sleep, diapers and medicine.</p></div><button class="btn pink small" data-act="addRemSheet" type="button">Add</button></div>
+    <div style="margin-top:8px">${S.reminders.map(r => {
+      const due = nextDue(r), tds = r.type === 'med' ? LG('med', sod()).filter(l => l.rid === r.id).length : 0, lastM = r.type === 'med' ? lastOf('med', l => l.rid === r.id) : null;
+      return `<div class="rem"><div class="t"><b>${esc(r.label)}${r.dose ? ' <span class="sub">· ' + esc(r.dose) + '</span>' : ''}</b><span class="sub">${esc(schedText(r))}${r.minGapH ? ' · wait ' + r.minGapH + ' h between doses' : ''}</span>
+        ${due && r.on ? `<br><span class="pill info" style="margin-top:4px">Next ${r.mode === 'daily' ? 'at ' + fmtT(due) : `<span data-until="${due}">${due <= now() ? 'now' : 'in ' + durText(due - now())}</span>`}</span>` : ''}
+        ${r.type === 'med' ? `<br><span class="sub">${tds} of ${(r.times || []).length} given today${lastM ? ' · last by ' + esc(cgName(lastM.by) || lastM.byN || 'someone') + ' at ' + fmtT(lastM.t) : ''}</span>` : ''}</div>
+        ${r.type === 'med' ? `<button class="btn soft small" data-act="medGiven" data-id="${r.id}" type="button">Given</button>` : ''}
+        <label class="sw"><input type="checkbox" data-bind="toggleRem" data-id="${r.id}" ${r.on ? 'checked' : ''} aria-label="${esc(r.label)} on or off"><span></span></label>
+        <button class="xbtn" data-act="delRem" data-id="${r.id}" aria-label="Delete ${esc(r.label)}" type="button">×</button></div>`;
+    }).join('')}</div></section>
+  ${visitsHTML()}
+  <section class="card"><h3>Phone notifications</h3><p class="sub" style="margin:4px 0 10px">${perm === 'granted' ? 'Notifications are on. You will get a phone alert and a chime when a reminder is due.' : perm === 'denied' ? 'Notifications are blocked. Allow them in your browser settings for this page.' : perm === 'unsupported' ? 'This browser does not support notifications. Reminders still appear inside the app with a chime.' : 'Allow notifications to get an alert on your phone when a reminder is due.'}</p>
+    ${perm === 'default' ? '<button class="btn block" data-act="enableNotif" type="button">Allow notifications</button>' : ''}
+    <div class="note" style="margin-top:10px">Reminders are checked while Nestling is open or running in the background. If the page is closed, anything due shows up the next time you open it. Each phone gets its own alerts.</div></section>
+  ${LG('med').length ? `<section class="card"><h3>Medicine given</h3>${histHTML('med', 6, l => `${esc(l.name)}${l.dose ? ' · ' + esc(l.dose) : ''}`)}</section>` : ''}
+  <section class="card"><h3>Recent alerts</h3>${LOC.alerts.length ? `<ul class="hist">${LOC.alerts.slice(0, 6).map(a => `<li><time><span class="day">${dayLabel(a.t)}</span>${fmtT(a.t)}</time><span class="d"><b>${esc(a.title)}</b><br><span class="sub">${esc(a.body)}</span></span></li>`).join('')}</ul>` : '<p class="empty"><span>🔔</span>No alerts yet. All quiet in the nursery.</p>'}</section>`;
+}
+
+/* ================= insights tab ================= */
+function statusFor(n, lo, hi) { if (n === 0) return ['none', 'No data yet']; if (n < lo) return ['warn', 'Below the usual range']; if (n > hi) return ['info', 'Above the usual range']; return ['ok', 'In the usual range']; }
+function dailySeries(fn) { const out = []; for (let i = 6; i >= 0; i--) { const s = sod() - i * DAY; out.push({s, v:fn(s, s + DAY), d:new Date(s).toLocaleDateString([], {weekday:'narrow'})}); } return out; }
+function barsHTML(series, pk, unit) { const mx = Math.max(1, ...series.map(x => x.v)); return `<div class="bars ${pk ? 'pk' : ''}" role="img" aria-label="Last 7 days: ${series.map(x => x.v + unit).join(', ')}">${series.map((x, i) => `<div class="c ${i === 6 ? 'today' : ''}"><b>${x.v}</b><i style="height:${Math.max(4, Math.round(x.v / mx * 78))}px"></i><span>${x.d}</span></div>`).join('')}</div>`; }
+function growthList() { const b = cur(), out = []; if (b && (b.weightKg || b.heightCm)) out.push({t:b.dob ? new Date(b.dob + 'T00:00:00').getTime() : 0, kg:b.weightKg, cm:b.heightCm}); return out.concat(S.growth.filter(g => b && g.b === b.id)).sort((a, c) => a.t - c.t); }
+function sleepMsIn(a, z, logs) { return logs.filter(l => l.kind === 'sleep' && l.end > a && l.t < z).reduce((n, l) => n + Math.min(l.end, z) - Math.max(l.t, a), 0); }
+function snapshot24(b) {
+  const t24 = now() - DAY, L = S.logs.filter(l => l.b === b.id && l.t >= t24 - DAY), d24 = L.filter(l => l.t >= t24);
+  const sl = sleepMsIn(t24, now(), L) + (b.sleepActive ? now() - Math.max(b.sleepActive.start, t24) : 0);
+  return {feeds:d24.filter(l => l.kind === 'feed').length, wet:d24.filter(l => l.kind === 'diaper' && l.type !== 'pee' ? l.type !== 'poop' : l.kind === 'diaper' && l.type === 'pee').length, dirty:d24.filter(l => l.kind === 'diaper' && l.type !== 'pee').length, sleepH:sl / HR};
+}
+function checkinHTML() {
+  const me = meC(), nm = me ? me.name : 'there', today = LOC.checkins.find(c => sod(c.t) === sod() && c.by === LOC.me), ci = UI.ci;
+  const recent = LOC.checkins.filter(c => c.by === LOC.me).slice(-3), lowRun = recent.length === 3 && recent.every(c => c.sleep <= 1);
+  const concern = today && (today.mood <= 2 || today.worry === 'Often' || (today.worry === 'Sometimes' && today.mood <= 3) || lowRun);
+  const help = `<div class="note pk" style="margin-top:12px"><b>You do not have to carry this alone.</b> The National Maternal Mental Health Hotline is free, confidential and open 24/7: call or text <b>1-833-852-6262</b>. If you think you might hurt yourself or your baby, call or text <b>988</b> or call 911 right away. Mention this to your own doctor too.</div>`;
+  if (today) return `<section class="card"><h3>Your check-in, ${esc(nm)}</h3><p class="sub" style="margin:4px 0 8px">Saved for today. Rest counts as progress.</p><div class="moods" aria-label="Your last check-ins">${LOC.checkins.filter(c => c.by === LOC.me).slice(-7).map(c => `<span style="flex:1;text-align:center;font-size:24px">${['😞', '🙁', '😐', '🙂', '😄'][c.mood - 1]}</span>`).join('')}</div>${concern ? help : ''}<p class="sub" style="margin-top:10px">Check-ins stay on this phone and are never shared with other caregivers.</p></section>`;
+  return `<section class="card"><h3>30-second check-in for ${esc(nm)}</h3><p class="sub" style="margin:2px 0 12px">Parents count too. Private to this phone.</p>
+    <label class="f" id="c1">How much did you sleep last night?</label><div class="chips" role="group" aria-labelledby="c1">${[['Under 3 h', 1], ['3 to 5 h', 2], ['5 to 7 h', 3], ['7 h or more', 4]].map(([t, v]) => `<button class="chip" data-act="ci" data-k="sleep" data-v="${v}" aria-pressed="${ci.sleep === v}" type="button">${t}</button>`).join('')}</div>
+    <label class="f" id="c2" style="margin-top:12px">How is your mood today?</label><div class="moods" role="group" aria-labelledby="c2">${['😞', '🙁', '😐', '🙂', '😄'].map((e, i) => `<button data-act="ci" data-k="mood" data-v="${i + 1}" aria-pressed="${ci.mood === i + 1}" aria-label="Mood ${i + 1} of 5" type="button">${e}</button>`).join('')}</div>
+    <label class="f" id="c3" style="margin-top:12px">Feeling overwhelmed, anxious or hopeless?</label><div class="chips" role="group" aria-labelledby="c3">${['No', 'Sometimes', 'Often'].map(t => `<button class="chip pk" data-act="ci" data-k="worry" data-v="${t}" aria-pressed="${ci.worry === t}" type="button">${t}</button>`).join('')}</div>
+    <button class="btn block" style="margin-top:14px" data-act="ciSave" type="button">Save check-in</button></section>`;
+}
+function insightsHTML() {
+  const b = cur(), d = ageDays(), bd = band(), h = new Date().getHours(), greet = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  const t24 = now() - DAY, feeds = LG('feed', t24).length, sleepH = (sleepMsIn(t24, now(), LG()) + (b.sleepActive ? now() - Math.max(b.sleepActive.start, t24) : 0)) / HR;
+  const wetN = LG('diaper', t24).filter(l => l.type !== 'poop').length, dirtyN = LG('diaper', t24).filter(l => l.type !== 'pee').length, wetMin = d == null ? 6 : d < 5 ? d + 1 : d < 60 ? 6 : 5;
+  const sF = statusFor(feeds, bd.feeds[0], bd.feeds[1]), sS = statusFor(Math.round(sleepH), bd.sleepH[0], bd.sleepH[1]), sW = (wetN === 0 && !LG().length) ? ['none', 'No data yet'] : wetN < wetMin ? ['warn', 'Below the usual range'] : ['ok', 'In the usual range'];
+  const fs = dailySeries((a, z) => LG('feed').filter(l => l.t >= a && l.t < z).length), ss = dailySeries((a, z) => Math.round(sleepMsIn(a, z, LG()) / HR * 10) / 10);
+  const g = growthList(), first = g[0], lastG = g[g.length - 1], cn = calmNote(), temps = LG('temp').sort((a, c) => c.t - a.t).slice(0, 3);
+  return `${!b.name ? `<section class="card" style="border:2px dashed var(--pink-200)"><h2>Add baby details</h2><p class="sub" style="margin-bottom:10px">Insights match your baby's age. Add a birth date to unlock them.</p><button class="btn pink" data-act="editProfile" type="button">Add details</button></section>` : ''}
+  <section class="card hero"><div><small class="sub" style="font-weight:800">${greet.toUpperCase()}</small><h2 style="font-size:28px;margin:2px 0">${esc(babyFirst())}${d != null ? ' is ' + esc(ageText(d).replace(' old', '')) : ''}</h2><p>${bd.name} stage${b.dob ? ' · born ' + fmtD(new Date(b.dob + 'T00:00:00')) : ''}</p></div><div style="font-size:54px" aria-hidden="true">🧸</div></section>
+  <section class="card calm"><span style="font-size:28px" aria-hidden="true">${cn[0]}</span><p style="margin:0;font-weight:700">${esc(cn[1])}</p></section>
+  <section class="card"><h2>Last 24 hours</h2><p class="sub" style="margin-bottom:10px">Compared with what is typical for ${bd.name.toLowerCase()}. Days vary a lot, so the weekly trend matters more.</p>
+    <div class="grid3" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      <div class="stat"><small>Feeds</small><span class="big">${feeds}</span><div style="margin:6px 0 2px"><span class="pill ${sF[0]}">${sF[1]}</span></div><small>Typical: ${bd.feeds[0]} to ${bd.feeds[1]}</small></div>
+      <div class="stat pk"><small>Sleep</small><span class="big">${sleepH.toFixed(1)}h</span><div style="margin:6px 0 2px"><span class="pill ${sS[0]}">${sS[1]}</span></div><small>Typical: ${bd.sleepH[0]} to ${bd.sleepH[1]}h</small></div>
+      <div class="stat"><small>Wet diapers</small><span class="big">${wetN}</span><div style="margin:6px 0 2px"><span class="pill ${sW[0]}">${sW[1]}</span></div><small>Expected: ${wetMin}+ a day</small></div>
+      <div class="stat pk"><small>Dirty diapers</small><span class="big">${dirtyN}</span><div style="margin:6px 0 2px"><span class="pill none">Varies a lot</span></div><small>Often 1 to 4 a day</small></div></div>
+    ${sW[0] === 'warn' && d != null && d >= 3 ? '<div class="note" style="margin-top:12px">Wet diapers are the best sign that baby is getting enough milk. If the count stays below the usual range for a day or two, check in with your pediatrician.</div>' : ''}</section>
+  ${S.babies.length > 1 ? `<section class="card"><h3>Side by side, last 24 hours</h3><table class="mini"><tr><th></th><th>Feeds</th><th>Wet</th><th>Dirty</th><th>Sleep</th></tr>${S.babies.map(x => { const s = snapshot24(x); return `<tr><td><b>${esc((x.name || 'Baby').split(' ')[0])}</b></td><td>${s.feeds}</td><td>${s.wet}</td><td>${s.dirty}</td><td>${s.sleepH.toFixed(1)}h</td></tr>`; }).join('')}</table></section>` : ''}
+  <section class="card"><h3>Feeds per day, last 7 days</h3>${barsHTML(fs, false, ' feeds')}</section>
+  <section class="card"><h3>Sleep hours per day, last 7 days</h3>${barsHTML(ss, true, ' hours')}</section>
+  <section class="card"><h3>Temperature</h3><p class="sub" style="margin:2px 0 10px">Log a reading to keep it for the doctor. A temperature of 100.4°F (38°C) or higher in a baby under 3 months means call your pediatrician right away.</p>
+    <div class="row"><input class="inp" id="tempIn" inputmode="decimal" placeholder="${S.units === 'us' ? 'e.g. 98.6' : 'e.g. 37.0'}" style="flex:1" aria-label="Temperature in ${S.units === 'us' ? 'Fahrenheit' : 'Celsius'}"><button class="btn soft" data-act="tempSave" type="button">Log °${S.units === 'us' ? 'F' : 'C'}</button></div>
+    ${temps.length ? `<ul class="hist">${temps.map(l => `<li><time><span class="day">${dayLabel(l.t)}</span>${fmtT(l.t)}</time><span class="d"><b>${showTemp(l.c)}</b>${byTag(l)}</span><button class="x" data-act="del" data-id="${l.id}" aria-label="Delete this reading" type="button">×</button></li>`).join('')}</ul>` : ''}</section>
+  ${checkinHTML()}
+  <section class="card"><h2>Good to know${d != null ? ' at ' + (d < 14 ? d + ' days' : Math.floor(d / 7) + ' weeks') : ''}</h2><div style="display:flex;flex-direction:column;gap:12px;margin-top:10px">${bd.tips.map((t, i) => `<div class="tip"><span class="ic" aria-hidden="true">${['⭐', '🌙', '🦆'][i]}</span><p>${t}</p></div>`).join('')}</div></section>
+  <section class="card"><h2>Growth</h2>${g.length ? `<div class="grid2" style="margin:8px 0"><div class="stat"><small>Latest weight</small><b class="big" style="font-size:24px">${lastG.kg ? showWt(lastG.kg) : '—'}</b>${first !== lastG && first.kg && lastG.kg ? `<small>${lastG.kg >= first.kg ? '+' : ''}${showWt(lastG.kg - first.kg)} since birth</small>` : ''}</div><div class="stat pk"><small>Latest length</small><b class="big" style="font-size:24px">${lastG.cm ? showHt(lastG.cm) : '—'}</b>${first !== lastG && first.cm && lastG.cm ? `<small>${lastG.cm >= first.cm ? '+' : ''}${showHt(lastG.cm - first.cm)} since birth</small>` : ''}</div></div>` : '<p class="empty"><span>📏</span>Add birth measurements in baby details, then record new ones after checkups.</p>'}
+    <div class="grid2"><div class="field"><label class="f" for="g-w">Weight (${S.units === 'us' ? 'lb' : 'kg'})</label><input class="inp" id="g-w" inputmode="decimal"></div><div class="field"><label class="f" for="g-h">Length (${S.units === 'us' ? 'in' : 'cm'})</label><input class="inp" id="g-h" inputmode="decimal"></div></div>
+    <button class="btn soft block" style="margin-top:10px" data-act="growthAdd" type="button">Save measurement</button></section>
+  <section class="card" style="text-align:center"><h3>Heading to a checkup?</h3><p class="sub" style="margin:4px 0 10px">A one-page summary of the last 7 days.</p><button class="btn pink" data-act="report" type="button">Open doctor report</button></section>`;
+}
+
+/* ================= doctor report ================= */
+function reportData() {
+  const b = cur(), rows = []; const L = LG();
+  for (let i = 6; i >= 0; i--) { const a = sod() - i * DAY, z = a + DAY, day = L.filter(l => l.t >= a && l.t < z), fd = day.filter(l => l.kind === 'feed');
+    rows.push({label:new Date(a).toLocaleDateString([], {weekday:'short', month:'numeric', day:'numeric'}) + (i === 0 ? ' *' : ''), feeds:fd.length, breastMin:fd.filter(l => l.sub === 'breast').reduce((n, l) => n + (l.dur || 0), 0), bottleMl:fd.filter(l => l.sub === 'bottle').reduce((n, l) => n + (l.ml || 0), 0),
+      wet:day.filter(l => l.kind === 'diaper' && l.type !== 'poop').length, dirty:day.filter(l => l.kind === 'diaper' && l.type !== 'pee').length, sleepH:sleepMsIn(a, z, L) / HR, naps:L.filter(l => l.kind === 'sleep' && l.t >= a && l.t < z).length}); }
+  const since = sod() - 6 * DAY;
+  return {b, rows, meds:L.filter(l => l.kind === 'med' && l.t >= since).sort((x, y) => x.t - y.t), temps:L.filter(l => l.kind === 'temp' && l.t >= since).sort((x, y) => x.t - y.t), growth:growthList(), colors:L.filter(l => l.kind === 'diaper' && l.color && l.t >= since)};
+}
+function reportBody(edit) {
+  const R = reportData(), d = ageDays(), full = R.rows.slice(0, 6), n = full.length || 1, avg = k => full.reduce((s, r) => s + r[k], 0) / n;
+  const cell = v => v, vol = ml => ml ? showVol(ml) : '0';
+  return `<h1>${esc(R.b.name || 'Baby')}: 7-day summary</h1><div style="color:#5F6E8C">${d != null ? esc(ageText(d)) + ' · born ' + fmtD(new Date(R.b.dob + 'T00:00:00')) + ' · ' : ''}Prepared ${fmtD(now())}</div>
+  <h3>Daily totals</h3><table><tr><th>Day</th><th>Feeds</th><th>Breast min</th><th>Bottle</th><th>Wet</th><th>Dirty</th><th>Sleep</th><th>Naps</th></tr>
+    ${R.rows.map(r => `<tr><td>${esc(r.label)}</td><td>${r.feeds}</td><td>${r.breastMin}</td><td>${vol(r.bottleMl)}</td><td>${r.wet}</td><td>${r.dirty}</td><td>${r.sleepH.toFixed(1)} h</td><td>${r.naps}</td></tr>`).join('')}
+    <tr class="tot"><td>Daily average*</td><td>${avg('feeds').toFixed(1)}</td><td>${Math.round(avg('breastMin'))}</td><td>${vol(Math.round(avg('bottleMl')))}</td><td>${avg('wet').toFixed(1)}</td><td>${avg('dirty').toFixed(1)}</td><td>${avg('sleepH').toFixed(1)} h</td><td>${avg('naps').toFixed(1)}</td></tr></table>
+  <div style="font-size:12px;color:#5F6E8C;margin-top:4px">* Today is still in progress and is left out of the average.</div>
+  <h3>Weight and length</h3>${R.growth.length ? `<table><tr><th>Date</th><th>Weight</th><th>Length</th></tr>${R.growth.map(x => `<tr><td>${x.t ? fmtD(x.t) : 'Birth'}</td><td>${x.kg ? showWt(x.kg) : '—'}</td><td>${x.cm ? showHt(x.cm) : '—'}</td></tr>`).join('')}</table>` : '<div>No measurements recorded.</div>'}
+  <h3>Medicines given</h3>${R.meds.length ? `<table><tr><th>When</th><th>Medicine</th><th>Dose</th><th>Given by</th></tr>${R.meds.map(l => `<tr><td>${esc(dayLabel(l.t))} ${fmtT(l.t)}</td><td>${esc(l.name)}</td><td>${esc(l.dose || '—')}</td><td>${esc((l.by && cgName(l.by)) || l.byN || '—')}</td></tr>`).join('')}</table>` : '<div>None logged.</div>'}
+  <h3>Temperature readings</h3>${R.temps.length ? `<table><tr><th>When</th><th>Reading</th></tr>${R.temps.map(l => `<tr><td>${esc(dayLabel(l.t))} ${fmtT(l.t)}</td><td>${showTemp(l.c)}</td></tr>`).join('')}</table>` : '<div>None logged.</div>'}
+  ${R.colors.length ? `<h3>Stool colors noted</h3><div>${R.colors.map(l => esc(l.color) + ' (' + dayLabel(l.t) + ')').join(', ')}</div>` : ''}
+  <h3>Questions for the doctor</h3>${edit ? `<textarea id="repNote" aria-label="Questions or notes for the doctor" placeholder="Type questions here before your visit">${esc(S.reportNote)}</textarea>` : `<div style="white-space:pre-wrap">${esc(S.reportNote) || '—'}</div>`}
+  <div style="font-size:11px;color:#5F6E8C;margin-top:14px">Parent-logged data from Nestling. Not a medical record. Ranges and guidance are general.</div>`;
+}
+function reportText() {
+  const R = reportData(), d = ageDays(), line = r => `${r.label}: ${r.feeds} feeds (${r.breastMin} breast min, bottle ${r.bottleMl ? showVol(r.bottleMl) : '0'}), ${r.wet} wet, ${r.dirty} dirty, sleep ${r.sleepH.toFixed(1)} h, ${r.naps} naps`;
+  return [`${R.b.name || 'Baby'}: 7-day summary` + (d != null ? ` (${ageText(d)})` : ''), `Prepared ${fmtD(now())}`, '', ...R.rows.map(line), '', 'Medicines: ' + (R.meds.length ? R.meds.map(l => `${l.name}${l.dose ? ' ' + l.dose : ''} ${dayLabel(l.t)} ${fmtT(l.t)}`).join('; ') : 'none'),
+    'Temperatures: ' + (R.temps.length ? R.temps.map(l => `${showTemp(l.c)} ${dayLabel(l.t)} ${fmtT(l.t)}`).join('; ') : 'none'), 'Growth: ' + (R.growth.length ? R.growth.map(x => `${x.t ? fmtD(x.t) : 'Birth'} ${x.kg ? showWt(x.kg) : ''} ${x.cm ? showHt(x.cm) : ''}`).join('; ') : 'none'), S.reportNote ? 'Questions: ' + S.reportNote : '', '(* today is still in progress)'].filter(x => x !== undefined).join('\n');
+}
+function reportDoc() {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>${esc(cur().name || 'Baby')} 7-day summary</title><style>body{font-family:Arial,sans-serif;color:#16213A;max-width:780px;margin:24px auto;padding:0 16px;font-size:14px}h1{font-size:24px;margin:0}h3{color:#1B4A94;margin:16px 0 6px}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #DDE5F3;padding:5px 4px;text-align:left}th{font-size:12px;color:#5F6E8C}.tot td{font-weight:bold;background:#F1F6FF}</style></head><body>${reportBody(false)}</body></html>`;
+}
+
+/* ================= sheets ================= */
+function cgPicker(forWho) {
+  const list = S.caregivers.map(c => `<div class="row" style="justify-content:space-between"><button class="chip ${cgIdx(c.id) % 2 ? 'pk' : ''}" style="flex:1;text-align:left" data-act="setMe" data-id="${c.id}" aria-pressed="${LOC.me === c.id}" type="button">${esc(c.name)}${LOC.me === c.id ? ' (you)' : ''}</button>${forWho ? '' : `<button class="xbtn" data-act="delCg" data-id="${c.id}" aria-label="Remove ${esc(c.name)}" type="button">×</button>`}</div>`).join('');
+  return `<div style="display:flex;flex-direction:column;gap:8px">${list || '<p class="sub">No one added yet.</p>'}</div>
+    <p class="sub" style="margin:12px 0 6px"><b>Add a caregiver</b></p><div class="chips">${ROLES.filter(r => !S.caregivers.some(c => c.name === r)).map(r => `<button class="chip" data-act="addCg" data-v="${r}" type="button">${r}</button>`).join('')}</div>
+    <div class="row" style="margin-top:8px"><input class="inp" id="cgName" placeholder="Other name" style="flex:1" aria-label="Caregiver name" maxlength="20"><button class="btn soft" data-act="addCgName" type="button">Add</button></div>`;
+}
+function renderSheet() {
+  const host = $('#sheetHost'); if (!host) return; const sh = UI.sheet; if (!sh) { host.innerHTML = ''; return; }
+  { const rn = $('#rn'), rd = $('#rd'); if (rn) UI.remName = rn.value; if (rd) UI.remDose = rd.value; }
+  if (sh.type === 'report') { host.innerHTML = `<div class="reportwrap"><div class="reptools noprint"><button class="btn ghost small" data-act="closeSheet" type="button">Close</button><button class="btn small" data-act="repCopy" type="button">Copy as text</button><button class="btn small soft" data-act="repDownload" type="button">Download file</button><button class="btn small soft" data-act="repPrint" type="button">Print</button></div><div class="rep" id="repBody">${reportBody(true)}</div>${sh.copyText ? `<div class="rep noprint" style="margin-top:10px"><b>Select and copy:</b><textarea readonly style="min-height:160px">${esc(sh.copyText)}</textarea></div>` : ''}</div>`; return; }
+  let inner = '';
+  if (sh.type === 'voice') inner = `<h2>Log with your voice</h2><p class="sub">Say or type what happened.</p>${bothBanner()}
+    <button class="micbig" data-act="voiceListen" type="button" aria-label="Start listening">${ICON.mic}</button>
+    <div class="row" style="margin-top:6px"><input class="inp" id="voiceIn" style="flex:1" placeholder="e.g. left breast 10 minutes" aria-label="Type or dictate a note" autocomplete="off"><button class="btn" data-act="voiceRun" type="button">Log it</button></div>
+    ${UI.voiceMsg ? `<div class="note ${/did not catch|cannot|not available|could not|off|needs/.test(UI.voiceMsg) ? 'pk' : ''}" style="margin-top:10px" role="status">${esc(UI.voiceMsg)}</div>` : ''}
+    <p class="sub" style="margin:12px 0 6px"><b>Try saying</b></p><div class="chips">${['Left breast 10 minutes', 'Bottle 3 ounces', 'Wet diaper', 'Dirty diaper', 'Fell asleep', 'Woke up', 'Temperature 98.6', 'Gave vitamin D'].map(x => `<button class="chip" style="min-height:36px;font-size:14px" data-act="voiceEx" data-v="${x}" type="button">${x}</button>`).join('')}</div>
+    <button class="btn ghost block" style="margin-top:14px" data-act="closeSheet" type="button">Close</button>`;
+  if (sh.type === 'diaperDetail') { const l = S.logs.find(x => x.id === sh.id), dirty = l && l.type !== 'pee';
+    inner = `<h2>Logged. Add details?</h2><p class="sub" style="margin-bottom:12px">${dirty ? 'Pick the color if you want to track it.' : 'Nothing more needed for a wet diaper.'}</p>
+      ${dirty ? `<div class="chips">${COLORS.map(([n, c]) => `<button class="chip" data-act="diaperColor" data-v="${n}" type="button" aria-pressed="${l.color === n}"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c};margin-right:6px;border:1px solid rgba(0,0,0,.2)"></span>${n}</button>`).join('')}</div>
+      ${l.color && /Red|Pale/.test(l.color) ? '<div class="note pk" style="margin-top:12px">Red or pale/white stools are worth mentioning to your pediatrician.</div>' : ''}
+      ${l.color === 'Black' ? `<div class="note ${ageDays() != null && ageDays() <= 4 ? '' : 'pk'}" style="margin-top:12px">${ageDays() != null && ageDays() <= 4 ? 'Dark, tar-like stool is normal in the first few days.' : 'Black stool after the first few days is worth mentioning to your pediatrician.'}</div>` : ''}` : ''}
+      <button class="btn block" style="margin-top:14px" data-act="closeSheet" type="button">Done</button>`; }
+  if (sh.type === 'addRem') { const T = UI.remType;
+    inner = `<h2>New reminder</h2><div class="chips" style="margin:10px 0" role="group" aria-label="Reminder type">${[['med', 'Medicine'], ['feed', 'Feeding'], ['diaper', 'Diaper'], ['custom', 'Other']].map(([v, t]) => `<button class="chip pk" data-act="remType" data-v="${v}" aria-pressed="${T === v}" type="button">${t}</button>`).join('')}</div>
+      <div class="field"><label class="f" for="rn">${T === 'med' ? 'Medicine name' : 'Reminder name'}</label><input class="inp" id="rn" value="${esc(UI.remName || '')}" placeholder="${T === 'med' ? 'e.g. Vitamin D' : 'e.g. Bath time'}"></div>
+      ${T === 'med' ? `<div class="field" style="margin-top:10px"><label class="f" for="rd">Dose (as directed by your pediatrician)</label><input class="inp" id="rd" value="${esc(UI.remDose || '')}" placeholder="e.g. 1 mL"></div>
+      <div style="margin-top:10px"><label class="f" id="rg">Minimum hours between doses (from the label)</label><div class="chips" role="group" aria-labelledby="rg">${[[0, 'None'], [4, '4 h'], [6, '6 h'], [8, '8 h'], [12, '12 h'], [24, '24 h']].map(([v, t]) => `<button class="chip" data-act="remGap" data-v="${v}" aria-pressed="${(UI.remGap || 0) === v}" type="button">${t}</button>`).join('')}</div><p class="sub" style="margin-top:6px">The app will warn before a second dose inside this window, whoever gave the first.</p></div>` : ''}
+      ${T === 'feed' || T === 'diaper' ? `<div style="margin-top:10px"><label class="f" id="rh">Every how many hours?</label><div class="chips" role="group" aria-labelledby="rh">${[2, 3, 4, 6].map(h => `<button class="chip" data-act="remHours" data-v="${h}" aria-pressed="${(UI.remHours || 3) === h}" type="button">${h} hours</button>`).join('')}</div></div>`
+      : `<div style="margin-top:10px"><label class="f" for="rt">Time each day</label><div class="row"><input class="inp" type="time" id="rt" value="09:00" style="flex:1"><button class="btn soft" data-act="addTime" type="button">Add time</button></div><div class="chips" style="margin-top:8px">${UI.remTimes.map((t, i) => `<button class="chip" type="button" data-act="rmTime" data-i="${i}" aria-label="Remove ${t}">${t} ×</button>`).join('')}</div></div>`}
+      ${UI.remErr ? `<p class="err" role="alert">${esc(UI.remErr)}</p>` : ''}
+      <div class="row" style="margin-top:16px"><button class="btn pink" style="flex:1" data-act="saveRem" type="button">Save reminder</button><button class="btn ghost" data-act="closeSheet" type="button">Cancel</button></div>`; }
+  if (sh.type === 'medConfirm') { const r = S.reminders.find(x => x.id === sh.rid), l = S.logs.find(x => x.id === sh.lastId), who = l && ((l.by && cgName(l.by)) || l.byN) || 'Someone';
+    inner = `<h2>Hold on, check first</h2><p style="margin:6px 0 12px"><b>${esc(who)}</b> gave <b>${esc(r ? r.label : 'this medicine')}</b> ${l ? ago(now() - l.t) + ' (at ' + fmtT(l.t) + ')' : 'recently'}. The label says to wait ${r ? r.minGapH : ''} hours between doses.</p>
+      <div class="grid2"><button class="btn" data-act="closeSheet" type="button">Don't log it</button><button class="btn ghost" data-act="medForce" data-id="${sh.rid}" type="button">Log anyway</button></div>`; }
+  if (sh.type === 'whoami') inner = `<h2>Who is logging?</h2><p class="sub" style="margin-bottom:12px">Every entry shows who logged it. Switch any time from the top of the screen, even on a shared phone.</p>${cgPicker(true)}<button class="btn block" style="margin-top:14px" data-act="whoDone" type="button">${LOC.me ? 'Continue' : 'Skip for now'}</button>`;
+  if (sh.type === 'settings') inner = `<h2>Settings</h2>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn soft" style="text-align:left" data-act="editProfile" type="button">Baby details</button><button class="btn soft" style="text-align:left" data-act="newBaby" type="button">Add another baby (twins)</button><button class="btn soft" style="text-align:left" data-act="shareSheet" type="button">Caregivers and sharing${FAM ? ' · live' : ''}</button></div>
+    <h3>Display</h3><div class="chips" role="group" aria-label="Display mode">${[['auto', 'Auto (night after 7 p.m.)'], ['night', 'Night'], ['day', 'Day']].map(([v, t]) => `<button class="chip" data-act="setTheme" data-v="${v}" aria-pressed="${LOC.theme === v}" type="button">${t}</button>`).join('')}</div>
+    <h3>Units</h3><div class="chips" role="group" aria-label="Units"><button class="chip" data-act="setUnits" data-v="us" aria-pressed="${S.units === 'us'}" type="button">oz, lb, °F</button><button class="chip" data-act="setUnits" data-v="metric" aria-pressed="${S.units === 'metric'}" type="button">ml, kg, °C</button></div>
+    <button class="btn ghost block" style="margin-top:16px" data-act="closeSheet" type="button">Close</button>`;
+  if (sh.type === 'share') inner = `<h2>Caregivers and sharing</h2><h3>Who uses this phone</h3>${cgPicker(false)}
+    <h3>Share with another phone</h3>${FAM ? `<p class="sub" style="margin-bottom:8px">Live sync is on. Give this code to the other parent.</p><div class="code">${esc(FAM.code)}</div>
+      <div class="row" style="margin-top:8px"><button class="btn small" data-act="copyCode" type="button">Copy code</button><button class="btn small ghost" data-act="leaveFam" type="button">Stop sharing on this phone</button></div>
+      <div class="note" style="margin-top:10px"><b>On the other phone:</b> open Nestling, tap the gear, choose Caregivers and sharing, then Join with a code. They also need access to this page, shared with edit rights from claude.ai.</div>`
+      : DBNS ? `<p class="sub" style="margin-bottom:10px">Create a family code on one phone. The other parent enters it on theirs, and both phones see the same entries, live, with names.</p><button class="btn block" data-act="famCreate" type="button">Create a family code</button>
+      <p class="sub" style="margin:14px 0 6px"><b>Already have a code?</b></p><div class="row"><input class="inp" id="joinCode" placeholder="ABCDE-FGH23" style="flex:1;text-transform:uppercase" aria-label="Family code" autocomplete="off"><button class="btn soft" data-act="famJoin" type="button">Join</button></div>
+      <div class="note" style="margin-top:10px">The code works like a shared key. Share it only with people you trust, and share this page only with your family.</div>`
+      : `<div class="note pk">Live sync between two phones is not turned on in this version, so each phone keeps its own entries. To share one phone, switch "Logging as" at the top before each entry.</div>`}
+    <button class="btn ghost block" style="margin-top:16px" data-act="closeSheet" type="button">Close</button>`;
+  host.innerHTML = `<div class="scrim" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="Dialog">${inner}</div></div>`;
+}
+function renderToasts() {
+  const host = $('#toasts'); if (!host) return;
+  host.innerHTML = UI.toasts.slice(-3).map(a => { const r = S.reminders.find(x => x.id === a.rid); return `<div class="toast"><b>${esc(a.title)}</b><p>${esc(a.body)}</p>
+    <div class="row"><button class="btn small pink" data-act="toastLog" data-id="${a.id}" type="button">${r && r.type === 'med' ? 'Mark given' : 'Open'}</button><button class="btn small ghost" data-act="toastSnooze" data-id="${a.id}" type="button">Snooze 10 min</button><button class="btn small ghost" data-act="toastClose" data-id="${a.id}" type="button">Dismiss</button></div></div>`; }).join('');
+}
+function tick() {
+  const t = now();
+  document.querySelectorAll('[data-since]').forEach(e => e.textContent = durText(t - Number(e.dataset.since)));
+  document.querySelectorAll('[data-until]').forEach(e => { const u = Number(e.dataset.until); e.textContent = u <= t ? 'now' : 'in ' + durText(u - t); });
+  document.querySelectorAll('[data-clock]').forEach(e => e.textContent = clockText(t - Number(e.dataset.clock)));
+}
+function loadPhoto(file) {
+  if (!file) return; const fr = new FileReader();
+  fr.onload = () => { const img = new Image(); img.onload = () => { const c = document.createElement('canvas'), n = 180; c.width = c.height = n; const x = c.getContext('2d'), m = Math.min(img.width, img.height); x.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, n, n); UI.draft.avatar = {type:'photo', value:c.toDataURL('image/jpeg', .82)}; render(); }; img.src = fr.result; };
+  fr.readAsDataURL(file);
+}
+
+/* ================= events ================= */
+document.addEventListener('input', e => { const t = e.target; if (t.dataset && t.dataset.d && UI.draft) UI.draft[t.dataset.d] = t.value; if (t.id === 'brandOther' && UI.setup) UI.setup.brand = t.value; if (t.id === 'repNote') { S.reportNote = t.value; save(); } });
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.id === 'photoIn') return loadPhoto(t.files[0]);
+  if (t.dataset.bind === 'when') UI.when = Number(t.value);
+  if (t.dataset.bind === 'toggleRem') { const r = S.reminders.find(x => x.id === t.dataset.id); if (r) { r.on = t.checked; if (r.mode === 'interval') r.since = now(); save(); render(); } }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'voiceIn') { e.preventDefault(); act('voiceRun'); } if (e.key === 'Escape' && UI.sheet) act('closeSheet'); });
+document.addEventListener('click', e => { unlockAudio(); const b = e.target.closest('[data-act]'); if (!b) return; if (b.dataset.act === 'scrim' && e.target !== b) return; act(b.dataset.act, b); });
+function addCaregiver(name) { name = name.trim().slice(0, 20); if (!name) return; if (S.caregivers.some(c => c.name.toLowerCase() === name.toLowerCase())) { const c = S.caregivers.find(x => x.name.toLowerCase() === name.toLowerCase()); LOC.me = c.id; } else { const c = {id:uid(), name}; S.caregivers.push(c); LOC.me = c.id; } LOC.askedWho = true; save(); }
+function act(a, b) {
+  const v = b && b.dataset ? b.dataset.v : null, P = S.feedPrefs;
+  switch (a) {
+    case 'unit': { const D = UI.draft, w = parseFloat(D.w), h = parseFloat(D.hgt); if (v === 'us' && S.units !== 'us') { if (w) D.w = (w * 2.20462).toFixed(1); if (h) D.hgt = (h / 2.54).toFixed(1); } if (v === 'metric' && S.units === 'us') { if (w) D.w = (w / 2.20462).toFixed(2); if (h) D.hgt = (h * 2.54).toFixed(1); } S.units = v; save(); return render(); }
+    case 'gender': UI.draft.gender = v; return render();
+    case 'emoji': UI.draft.avatar = {type:'emoji', value:v}; return render();
+    case 'clearAvatar': UI.draft.avatar = null; return render();
+    case 'pickPhoto': return $('#photoIn').click();
+    case 'saveProfile': { const D = UI.draft; if (!D.name.trim()) { D.err = 'Add a name, or choose Skip for now.'; return render(); } const w = parseFloat(D.w), h = parseFloat(D.hgt);
+      const data = {name:D.name.trim(), gender:D.gender, dob:D.dob, avatar:D.avatar, weightKg:w ? (S.units === 'us' ? w / 2.20462 : w) : null, heightCm:h ? (S.units === 'us' ? h * 2.54 : h) : null, blank:false};
+      if (D.mode === 'new') { const nb = Object.assign({id:uid(), sleepActive:null, breastActive:null}, data); S.babies.push(nb); LOC.babyId = nb.id; UI.both = false; }
+      else if (D.mode === 'edit' && cur()) Object.assign(cur(), data); else { S.babies = [Object.assign({id:uid(), sleepActive:null, breastActive:null}, data)]; S.skipped = false; LOC.babyId = S.babies[0].id; }
+      UI.draft = null; save(); return render(); }
+    case 'skipProfile': S.skipped = true; S.babies = [{id:uid(), name:'', gender:'', dob:'', avatar:null, weightKg:null, heightCm:null, sleepActive:null, breastActive:null, blank:true}]; LOC.babyId = S.babies[0].id; UI.draft = null; save(); return render();
+    case 'editProfile': UI.sheet = null; UI.draft = draftFrom(cur(), 'edit'); return render();
+    case 'newBaby': UI.sheet = null; UI.draft = draftFrom(null, 'new'); return render();
+    case 'cancelProfile': UI.draft = null; return render();
+    case 'mute': LOC.muted = !LOC.muted; saveLocal(); return render();
+    case 'theme': LOC.theme = LOC.theme === 'auto' ? 'night' : LOC.theme === 'night' ? 'day' : 'auto'; saveLocal(); snack('Display: ' + (LOC.theme === 'auto' ? 'Auto (night after 7 p.m.)' : LOC.theme)); return render();
+    case 'setTheme': LOC.theme = v; saveLocal(); return render();
+    case 'setUnits': S.units = v; save(); return render();
+    case 'settings': UI.sheet = {type:'settings'}; return renderSheet();
+    case 'shareSheet': UI.sheet = {type:'share'}; return renderSheet();
+    case 'tab': UI.tab = v; UI.when = 0; return render();
+    case 'pickBaby': if (b.dataset.id === 'both') UI.both = true; else { UI.both = false; LOC.babyId = b.dataset.id; saveLocal(); } return render();
+    case 'del': removeLog(b.dataset.id); return render();
+    case 'seen': { const me = meC(); if (me) { LOC.seen[me.id] = now(); saveLocal(); } return render(); }
+    /* caregivers + sharing */
+    case 'whoami': UI.sheet = {type:'whoami'}; return renderSheet();
+    case 'setMe': LOC.me = b.dataset.id; LOC.askedWho = true; if (!LOC.seen[LOC.me]) LOC.seen[LOC.me] = now(); saveLocal(); return render();
+    case 'addCg': addCaregiver(v); return render();
+    case 'addCgName': { const i = $('#cgName'); if (i && i.value.trim()) { addCaregiver(i.value); return render(); } return; }
+    case 'delCg': S.caregivers = S.caregivers.filter(c => c.id !== b.dataset.id); if (LOC.me === b.dataset.id) LOC.me = null; save(); return render();
+    case 'whoDone': LOC.askedWho = true; if (LOC.me && !LOC.seen[LOC.me]) LOC.seen[LOC.me] = now(); saveLocal(); UI.sheet = null; return render();
+    case 'famCreate': return famCreate();
+    case 'famJoin': return famJoin(($('#joinCode') || {}).value || '');
+    case 'leaveFam': return famLeave();
+    case 'copyCode': try { navigator.clipboard.writeText(FAM.code).then(() => snack('Code copied.'), () => snack('Select the code and copy it.')); } catch (e) { snack('Select the code and copy it.'); } return;
+    /* feed */
+    case 'setup': UI.setup[b.dataset.k] = b.dataset.k === 'intervalH' ? Number(v) : v; if (b.dataset.k === 'type' && v === 'breast') UI.setup.other = false; return render();
+    case 'brand': if (v === 'Other') { UI.setup.other = true; UI.setup.brand = ''; } else { UI.setup.other = false; UI.setup.brand = v; } return render();
+    case 'saveFeedSetup': { const Q = UI.setup; S.feedPrefs = {done:true, type:Q.type, brand:Q.type === 'breast' ? '' : (Q.brand || ''), bottleMl:Number(Q.bottleMl) || 90, intervalH:Number(Q.intervalH)};
+      const r = S.reminders.find(x => x.id === 'r-feed'); if (r) { if (Q.intervalH > 0) { r.hours = Q.intervalH; r.on = true; r.since = now(); } else r.on = false; }
+      UI.feedMode = null; UI.setup = null; save(); return render(); }
+    case 'skipFeedSetup': S.feedPrefs.done = true; UI.setup = null; save(); return render();
+    case 'editFeedSetup': S.feedPrefs.done = false; UI.setup = Object.assign({}, S.feedPrefs, {other:!!S.feedPrefs.brand && !FORMULAS.includes(S.feedPrefs.brand)}); return render();
+    case 'feedMode': UI.feedMode = v; return render();
+    case 'milk': UI.milk = v; return render();
+    case 'breastStart': cur().breastActive = {side:b.dataset.side, start:now()}; save(); return render();
+    case 'breastSwitch': finishBreast(true); return render();
+    case 'breastDone': finishBreast(false); return render();
+    case 'breastQuick': addLog({kind:'feed', sub:'breast', side:nextSide(), dur:Number(b.dataset.m)}); return render();
+    case 'bottle': addLog({kind:'feed', sub:'bottle', ml:Number(b.dataset.ml), milk:UI.milk, brand:UI.milk === 'formula' ? P.brand : ''}, {both:true}); return render();
+    case 'bottleCustom': { const n = parseFloat($('#customMl').value); if (!n) return; addLog({kind:'feed', sub:'bottle', ml:S.units === 'us' ? Math.round(n * 29.5735) : Math.round(n), milk:UI.milk, brand:UI.milk === 'formula' ? P.brand : ''}, {both:true}); return render(); }
+    case 'pumpWhere': UI.pumpWhere = v; return render();
+    case 'pump': S.stash.push({id:uid(), ml:Number(b.dataset.ml), t:whenTs(), where:UI.pumpWhere, by:LOC.me || null, byN:meC() ? meC().name : ''}); UI.when = 0; save(); snack('Added to the ' + UI.pumpWhere + '.'); return render();
+    case 'useBag': { const x = S.stash.find(s => s.id === b.dataset.id); if (x) { x.used = true; addLog({kind:'feed', sub:'bottle', ml:x.ml, milk:'milk', brand:''}); snack('Logged a bottle of pumped milk.'); } return render(); }
+    case 'tossBag': S.stash = S.stash.filter(s => s.id !== b.dataset.id); save(); return render();
+    /* diaper */
+    case 'diaper': { const l = addLog({kind:'diaper', type:v}, {both:true}); UI.sheet = {type:'diaperDetail', id:l.id}; return render(); }
+    case 'diaperColor': { const l = S.logs.find(x => x.id === UI.sheet.id); if (l) { l.color = v; touchLog(l); } return renderSheet(); }
+    /* sleep */
+    case 'sleepToggle': { const ts = whenTs(); UI.when = 0; if (allAsleep()) endSleep(ts); else if (asleepAny()) { startSleep(ts); } else startSleep(ts); return render(); }
+    case 'pastSleep': { const s = new Date($('#ps-s').value).getTime(), en = new Date($('#ps-e').value).getTime(); if (!s || !en || en <= s) return snack('Pick a wake time after the fall-asleep time.'); targetIds(true).forEach(id => commitLog({id:uid(), kind:'sleep', b:id, t:s, end:en, by:LOC.me || null, byN:meC() ? meC().name : ''})); return render(); }
+    /* reminders */
+    case 'addRemSheet': UI.sheet = {type:'addRem'}; UI.remType = 'med'; UI.remTimes = ['09:00']; UI.remHours = 3; UI.remGap = 0; UI.remErr = ''; UI.remName = ''; UI.remDose = ''; return renderSheet();
+    case 'remType': UI.remType = v; UI.remErr = ''; return renderSheet();
+    case 'remHours': UI.remHours = Number(v); return renderSheet();
+    case 'remGap': UI.remGap = Number(v); return renderSheet();
+    case 'addTime': { const t = $('#rt').value; if (t && !UI.remTimes.includes(t) && UI.remTimes.length < 6) UI.remTimes.push(t); UI.remTimes.sort(); return renderSheet(); }
+    case 'rmTime': UI.remTimes.splice(Number(b.dataset.i), 1); return renderSheet();
+    case 'saveRem': { const name = $('#rn').value.trim(), T = UI.remType; if (!name) { UI.remErr = 'Give the reminder a name.'; return renderSheet(); } if ((T === 'med' || T === 'custom') && !UI.remTimes.length) { UI.remErr = 'Add at least one time.'; return renderSheet(); }
+      const r = {id:uid(), type:T, label:name, on:true}; if (T === 'feed' || T === 'diaper') { r.mode = 'interval'; r.hours = UI.remHours || 3; r.since = now(); } else { r.mode = 'daily'; r.times = UI.remTimes.slice(); if (T === 'med') { r.dose = $('#rd') ? $('#rd').value.trim() : ''; if (UI.remGap) r.minGapH = UI.remGap; } }
+      S.reminders.push(r); UI.sheet = null; save(); return render(); }
+    case 'delRem': S.reminders = S.reminders.filter(x => x.id !== b.dataset.id); save(); return render();
+    case 'medGiven': return tryGive(b.dataset.id, false);
+    case 'medForce': return tryGive(b.dataset.id, true);
+    case 'enableNotif': try { Notification.requestPermission().then(() => render()).catch(() => render()); } catch (e) { render(); } return;
+    case 'toastClose': UI.toasts = UI.toasts.filter(x => x.id !== b.dataset.id); return renderToasts();
+    case 'toastSnooze': { const al = UI.toasts.find(x => x.id === b.dataset.id); if (al && al.rid !== 'visit') LOC.snoozes.push({rid:al.rid, at:now() + 10 * MIN}); UI.toasts = UI.toasts.filter(x => x.id !== b.dataset.id); saveLocal(); return renderToasts(); }
+    case 'toastLog': { const al = UI.toasts.find(x => x.id === b.dataset.id), r = al && S.reminders.find(x => x.id === al.rid); UI.toasts = UI.toasts.filter(x => x.id !== b.dataset.id);
+      if (r && r.type === 'med') { renderToasts(); return tryGive(r.id, false); } UI.tab = r ? ({feed:'feed', diaper:'diaper', sleep:'sleep'})[r.type] || 'rem' : 'rem'; return render(); }
+    case 'visit': { const k = b.dataset.k; if (S.visits[k]) delete S.visits[k]; else S.visits[k] = now(); save(); return render(); }
+    case 'allVisits': UI.showAllVisits = !UI.showAllVisits; return render();
+    /* insights */
+    case 'growthAdd': { const w = parseFloat($('#g-w').value), h = parseFloat($('#g-h').value); if (!w && !h) return; S.growth.push({b:cur().id, t:now(), kg:w ? (S.units === 'us' ? w / 2.20462 : w) : null, cm:h ? (S.units === 'us' ? h * 2.54 : h) : null}); save(); return render(); }
+    case 'tempSave': { const raw = parseFloat($('#tempIn').value); if (!raw) return snack('Type the reading first.'); const c = S.units === 'us' ? (raw - 32) * 5 / 9 : raw; if (c < 30 || c > 43) return snack('That reading looks off. Check the number and unit.'); addLog({kind:'temp', c:Math.round(c * 10) / 10}); return render(); }
+    case 'ci': UI.ci[b.dataset.k] = b.dataset.k === 'worry' ? v : Number(v); return render();
+    case 'ciSave': { const c = UI.ci; if (!c.sleep || !c.mood || !c.worry) return snack('Answer all 3 questions first.'); LOC.checkins.push({t:now(), by:LOC.me, sleep:c.sleep, mood:c.mood, worry:c.worry}); if (LOC.checkins.length > 120) LOC.checkins = LOC.checkins.slice(-120); UI.ci = {}; saveLocal(); return render(); }
+    /* report */
+    case 'report': UI.sheet = {type:'report'}; return renderSheet();
+    case 'repCopy': { const txt = reportText(); try { navigator.clipboard.writeText(txt).then(() => snack('Report copied.'), () => { UI.sheet.copyText = txt; renderSheet(); }); } catch (e) { UI.sheet.copyText = txt; renderSheet(); } return; }
+    case 'repDownload': return (async () => { try { const dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; if (!dl) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([reportDoc()], {type:'text/html'})); a.download = (cur().name || 'baby') + '-7-day-summary.html'; document.body.appendChild(a); a.click(); a.remove(); return; } const html = reportDoc(); try { await dl.save({filename:(cur().name || 'baby') + '-7-day-summary.html', data:new Blob([html], {type:'text/html'})}); } catch (e1) { await dl.save({filename:(cur().name || 'baby') + '-7-day-summary.html', data:html}); } } catch (e) { snack('Download was cancelled or is not available.'); } })();
+    case 'repPrint': try { window.print(); } catch (e) { snack('Printing is blocked here. Use Copy as text, or take a screenshot.'); } return;
+    /* voice */
+    case 'voiceOpen': UI.sheet = {type:'voice'}; UI.voiceMsg = ''; return renderSheet();
+    case 'voiceListen': return startListening();
+    case 'voiceEx': { const i = $('#voiceIn'); if (i) i.value = v; return act('voiceRun'); }
+    case 'voiceRun': { const i = $('#voiceIn'); if (!i || !i.value.trim()) return; UI.voiceMsg = parseCommand(i.value); i.value = ''; return render(); }
+    case 'reloadApp': return location.reload();
+    case 'resetLocal': try { localStorage.removeItem('nestling-v1'); localStorage.removeItem('nestling-local-v1'); } catch (e) {} return location.reload();
+    case 'closeSheet': case 'scrim': UI.sheet = null; return render();
+  }
+}
+
+/* ================= boot ================= */
+function showFatal(e) {
+  const r = $('#app'); if (!r) return;
+  r.innerHTML = `<div class="wrap"><section class="card" style="margin-top:40px"><h2>Nestling hit a snag</h2><p class="sub" style="margin:6px 0 10px">Try again first. If it keeps happening, start fresh on this device. Your account copy is not deleted.</p><div class="note pk" style="word-break:break-word">${esc((e && e.message) || e)}</div><div class="row" style="margin-top:12px"><button class="btn" data-act="reloadApp" type="button">Try again</button><button class="btn ghost" data-act="resetLocal" type="button">Start fresh on this device</button></div></section></div>`;
+}
+window.addEventListener('error', ev => { if (document.querySelector('#app .empty')) showFatal(ev.error || ev.message); });
+window.addEventListener('unhandledrejection', ev => { if (document.querySelector('#app .empty')) showFatal(ev.reason); });
+function startLoops() {
+  /* battery friendly: labels refresh every 30 s, every 1 s only while a breastfeed timer runs, never while hidden */
+  (function loop() { try { if (!document.hidden) { tick(); applyTheme(); } } catch (e) {} setTimeout(loop, cur() && cur().breastActive ? 1000 : 30000); })();
+  setInterval(() => { try { checkReminders(); } catch (e) {} }, 15000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { try { checkReminders(); if (!UI.sheet && !UI.draft) render(); } catch (e) {} } });
+}
+(function boot() {
+  try { loadLocal(); applyTheme(); render(); checkReminders(); } catch (e) { showFatal(e); }
+  startLoops();
+  initStore().then(() => { try { softRender(); } catch (e) { showFatal(e); } }).catch(() => {});
+})();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); }
+</script>
+</body>
+</html>
